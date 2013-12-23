@@ -43,7 +43,7 @@ public class PrintRDFStatements {
             UnavailableException, TimedOutException, TException, AuthenticationException,
             AuthorizationException, MalformedURLException, IOException, RDFParseException, RDFHandlerException 
     {
-    File uni = new File("C:\\Users\\SanjayV\\SkyDrive\\Documents\\test2.owl");
+    File uni = new File("C:\\Users\\SanjayV\\SkyDrive\\Documents\\sanjay.owl");
         //java.net.URL documentUrl = new URL("F:\\Cassandra\\stardog\\examples\\data\\University.owl");
         URL documentUrl = ((uni.toURI()).toURL());
         InputStream inputStream = documentUrl.openStream();
