@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuite failures="0" time="0.025" errors="0" skipped="0" tests="1" name="in.vit.site.dbstore.store.AppTest">
+<testsuite failures="0" time="0.028" errors="0" skipped="0" tests="1" name="in.vit.site.dbstore.store.AppTest">
   <properties>
     <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"/>
     <property name="sun.boot.library.path" value="C:\Program Files\Java\jdk1.7.0_40\jre\bin"/>
@@ -28,7 +28,7 @@
     <property name="os.name" value="Windows 8"/>
     <property name="classworlds.conf" value="C:\Program Files\NetBeans 7.3.1\java\maven\bin\m2.conf"/>
     <property name="sun.jnu.encoding" value="Cp1252"/>
-    <property name="java.library.path" value="C:\Program Files\Java\jdk1.7.0_40\bin;C:\Windows\Sun\Java\bin;C:\Windows\system32;C:\Windows;C:\Program Files\CollabNet\Subversion Client;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Program Files (x86)\ATI Technologies\ATI.ACE\Core-Static;C:\Program Files\Java\jdk1.7.0_40\bin;F:\Cassandra\ant\bin;F:\Cassandra\cassandra-trunk\bin;F:\Cassandra\tomcat\bin;C:\Program Files (x86)\Nmap;."/>
+    <property name="java.library.path" value="C:\Program Files\Java\jdk1.7.0_40\bin;C:\Windows\Sun\Java\bin;C:\Windows\system32;C:\Windows;C:\Python33\;C:\Program Files\CollabNet\Subversion Client;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Program Files (x86)\ATI Technologies\ATI.ACE\Core-Static;C:\Program Files\Java\jdk1.7.0_40\bin;F:\Cassandra\ant\bin;F:\Cassandra\cassandra-trunk\bin;F:\Cassandra\tomcat\bin;C:\Program Files (x86)\Nmap;."/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
     <property name="java.class.version" value="51.0"/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
@@ -60,5 +60,5 @@
     <property name="sun.desktop" value="windows"/>
     <property name="sun.cpu.isalist" value="amd64"/>
   </properties>
-  <testcase time="0.002" classname="in.vit.site.dbstore.store.AppTest" name="testApp"/>
+  <testcase time="0" classname="in.vit.site.dbstore.store.AppTest" name="testApp"/>
 </testsuite>
