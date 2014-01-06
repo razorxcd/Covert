@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package vit.mtech.IT;
+package vit.mtech.it.major.module1;
 
    import org.apache.cassandra.thrift.AuthenticationException;
    import org.apache.cassandra.thrift.AuthorizationException;
@@ -44,7 +44,7 @@ import org.openrdf.rio.helpers.StatementCollector;
  *
  * @author SanjayV
  */
-public class Sesame {
+public class StoreUsingThrift {
    public static void main(String[] args) throws TTransportException, 
            UnsupportedEncodingException, InvalidRequestException, NotFoundException,
            UnavailableException, TimedOutException, TException, AuthenticationException,

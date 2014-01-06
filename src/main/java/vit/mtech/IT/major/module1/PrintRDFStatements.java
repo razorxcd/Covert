@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package vit.mtech.IT;
+package vit.mtech.it.major.module1;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;

@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package vit.mtech.IT;
+package vit.mtech.it.major.module1;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,7 +25,7 @@ import com.datastax.driver.core.Host;
 import com.datastax.driver.core.Metadata;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
-import static vit.mtech.IT.stax.session;
+import static vit.mtech.it.major.module1.stax.session;
 /**
  *
  * @author SanjayV
@@ -50,12 +50,12 @@ class stax
     }
     public void createSchema() {
   
-    session.execute("CREATE TABLE rdfstore (\n" +
-"    subject text PRIMARY KEY,\n" +
+    session.execute("CREATE TABLE RDF_SPO (\n" +
+"    subject text,\n" +
 "    predicate text,\n" +
 "   object text,\n" +
-");");
-    session.execute("CREATE index on rdfstore(predicate);");
+"PRIMARY KEY(subject, object));");
+    session.execute("CREATE index on RDF_SPO(predicate);");
     }
     public void close()
     {
