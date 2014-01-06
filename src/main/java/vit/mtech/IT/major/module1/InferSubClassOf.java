@@ -142,8 +142,8 @@ public class InferSubClassOf extends WORK {
        //String c=Integer.toString(count);
        System.out.println(key1+":"+val);
        session.execute(" INSERT INTO RDF_SPO (subject, object, predicate) VALUES ("+"'"+ont+key1+"'"+","+" "+"'"+ont+val+"'"+","+" "+"'"+pred+"');");
-       session.execute(" INSERT INTO RDF_OSP (object, subject, predicate) VALUES ("+"'"+ont+val+"'"+","+" "+"'"+ont+key1+"'"+","+" "+"'"+pred+"');");
-       session.execute(" INSERT INTO RDF_POS (predicate, object, subject) VALUES ("+"'"+pred+"'"+","+" "+"'"+ont+val+"'"+","+" "+"'"+ont+key1+"');");
+       session.execute(" INSERT INTO RDF_OSP (subject, object, predicate) VALUES ("+"'"+ont+key1+"'"+","+" "+"'"+ont+val+"'"+","+" "+"'"+pred+"');");
+       session.execute(" INSERT INTO RDF_POS (subject, object, predicate) VALUES ("+"'"+ont+key1+"'"+","+" "+"'"+ont+val+"'"+","+" "+"'"+pred+"');");
        key=val;   
       // count++;
     

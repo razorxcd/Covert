@@ -53,7 +53,7 @@ public void createSchema1() {
             + "title text," + "album text," + "artist text,"
             + "tags set<text>," + "data blob" + ");");*/
     session.execute("CREATE TABLE RDF_OSP (" + "subject varchar,"
-            + "predicate varchar," + "object varchar, "+ "PRIMARY KEY (object)"
+            + "predicate varchar," + "object varchar, "+ "PRIMARY KEY (subject, object)"
             + ")");
     //session.execute("CREATE index on RDF_OSP(predicate);");
 
@@ -67,7 +67,7 @@ public void createSchema2() {
             + "title text," + "album text," + "artist text,"
             + "tags set<text>," + "data blob" + ");");*/
     session.execute("CREATE TABLE RDF_POS (" + "subject varchar,"
-            + "predicate varchar," + "object varchar, "+ "PRIMARY KEY (predicate, object)"
+            + "predicate varchar," + "object varchar, "+ "PRIMARY KEY (subject, object)"
             + ")");
     //session.execute("CREATE index on RDF_OSP(predicate);");
 
@@ -81,8 +81,8 @@ public static void main(String[] args) {
     Schema client = new Schema();
     client.connecti();
 
-   // client.createSchema();
-   //client.createSchema1();
+    client.createSchema();
+   client.createSchema1();
     client.createSchema2();
     client.close();
 
