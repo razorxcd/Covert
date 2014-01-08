@@ -83,6 +83,8 @@ import static vit.mtech.IT.major.module1.WORK.session;
                 String sub=sta.getSubject().toString();
                 String obj=sta.getObject().toString();
                 
+                
+                
                 //splitting
                 String p[]=pred.split("#");
                 String s[]=sub.split("#");
@@ -114,14 +116,18 @@ import static vit.mtech.IT.major.module1.WORK.session;
         {
             cluster.shutdown();
         }
+
+    
  }
 public class InferSubClassOf extends WORK {
     public static void main(String args[]) throws MalformedURLException, IOException, RDFParseException, RDFHandlerException{
         WORK w=new WORK();
-        w.DO();
+        
         
         w.connecti();
         session.execute("USE rdf;");
+        w.DO();
+        
         for(Map.Entry<String, String> me:hash.entrySet())
        {
            bl.add(me.getKey().toString());
@@ -141,9 +147,9 @@ public class InferSubClassOf extends WORK {
        String val=hash.get(key).toString();
        //String c=Integer.toString(count);
        System.out.println(key1+":"+val);
-       session.execute(" INSERT INTO RDF_SPO (subject, object, predicate) VALUES ("+"'"+ont+key1+"'"+","+" "+"'"+ont+val+"'"+","+" "+"'"+pred+"');");
-       session.execute(" INSERT INTO RDF_OSP (subject, object, predicate) VALUES ("+"'"+ont+key1+"'"+","+" "+"'"+ont+val+"'"+","+" "+"'"+pred+"');");
-       session.execute(" INSERT INTO RDF_POS (subject, object, predicate) VALUES ("+"'"+ont+key1+"'"+","+" "+"'"+ont+val+"'"+","+" "+"'"+pred+"');");
+      // session.execute(" INSERT INTO RDF_SPO (subject, object, predicate) VALUES ("+"'"+ont+key1+"'"+","+" "+"'"+ont+val+"'"+","+" "+"'"+pred+"');");
+      // session.execute(" INSERT INTO RDF_OSP (subject, object, predicate) VALUES ("+"'"+ont+key1+"'"+","+" "+"'"+ont+val+"'"+","+" "+"'"+pred+"');");
+       //session.execute(" INSERT INTO RDF_POS (subject, object, predicate) VALUES ("+"'"+ont+key1+"'"+","+" "+"'"+ont+val+"'"+","+" "+"'"+pred+"');");
        key=val;   
       // count++;
     

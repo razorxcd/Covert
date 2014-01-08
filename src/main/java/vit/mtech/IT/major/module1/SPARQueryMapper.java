@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package vit.mtech.it.major.module1;
+package vit.mtech.IT.major.module1;
 import java.io.*;
 import java.util.*;
 import org.apache.cassandra.thrift.AuthenticationException;
@@ -117,7 +117,7 @@ class Mapper
      public void cqlquery()
      {
         // param.add(null);
-         String queryString="SELECT"+" "+find.get(0)+","+" "+find.get(1)+" "+"FROM rdfstore"+" "+"WHERE predicate='"+pred+find.get(2)+"';";
+         String queryString="SELECT"+" "+find.get(0)+","+" "+find.get(1)+" "+"FROM rdf_spo"+" "+"WHERE predicate='"+pred+find.get(2)+"';";
          session.execute("USE rdf;");
          ResultSet result=session.execute(queryString);
        // System.out.println(String.format("subject", "object",

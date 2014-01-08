@@ -60,6 +60,8 @@ import org.openrdf.rio.helpers.StatementCollector;
                 String sub=sta.getSubject().toString();
                 String obj=sta.getObject().toString();
                 
+                
+                
                 //splitting
                 String p[]=pred.split("#");
                 String s[]=sub.split("#");
@@ -84,6 +86,7 @@ import org.openrdf.rio.helpers.StatementCollector;
                                 }*/
             Set set=hash.entrySet();
             Iterator i=set.iterator();
+           
             //while(i.hasNext())
             //{
            //     Map.Entry me=(Map.Entry)i.next();

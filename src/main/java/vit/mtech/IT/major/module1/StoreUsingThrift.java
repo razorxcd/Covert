@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package vit.mtech.it.major.module1;
+package vit.mtech.IT.major.module1;
 
    import org.apache.cassandra.thrift.AuthenticationException;
    import org.apache.cassandra.thrift.AuthorizationException;
@@ -64,7 +64,7 @@ public class StoreUsingThrift {
         //Random r=new Random(timestamp);
         
         //Setting the RDF parser to work
-        File uni = new File("C:\\Users\\SanjayV\\SkyDrive\\Documents\\sanjay.owl");
+        File uni = new File("C:\\Users\\SanjayV\\SkyDrive\\Documents\\final1.owl");
         //java.net.URL documentUrl = new URL("F:\\Cassandra\\stardog\\examples\\data\\University.owl");
         URL documentUrl = ((uni.toURI()).toURL());
         InputStream inputStream = documentUrl.openStream();
@@ -109,18 +109,18 @@ public class StoreUsingThrift {
          Column objectColumn = new Column(ByteBuffer.wrap("object".getBytes()));
                 buffer=st.getObject().toString();
                 //System.out.println(buffer);
-               /* if(buffer.contains("http://www.w3.org/2002/07/owl#"))
+                if(buffer.contains("http://www.w3.org/2002/07/owl#"))
                 {
                     continue;
-                }*/
-               // else
-                //{
+                }
+                else
+                {
                        
                 
                 objectColumn.setValue(ByteBuffer.wrap(buffer.getBytes()));
                 objectColumn.setTimestamp(timestamp);
                 client.insert(ByteBuffer.wrap(key.getBytes()), parent, objectColumn, ConsistencyLevel.ONE);
-                //}
+                }
     }
     
 }
