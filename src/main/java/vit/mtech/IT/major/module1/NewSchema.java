@@ -34,6 +34,10 @@ public void connecti() {
     }
     
 }
+public void init()
+{
+    session.execute("USE rdf;");
+}
 public void createschema()
 {
     session.execute("USE rdf;");
@@ -42,11 +46,12 @@ public void createschema()
 public void addColumns()
 {
     String c="col";
-    for(int i=1;i<=10;i++)
+    for(int i=513;i<=512;i++)
     {
         String col=c+i;
         System.out.println("Adding "+col);
-        session.execute("ALTER TABLE TestRDF ADD "+col+" varchar;");
+        session.execute("ALTER TABLE SO_RDF ADD "+col+" varchar;");
+        
     }
 }
 public void close() {
@@ -55,9 +60,10 @@ public void close() {
 public static void main(String[] args) {
     NewSchema client = new NewSchema();
     client.connecti();
+    client.init();
 
-    client.createschema();
-    //client.addColumns();
+    //client.createschema();
+    client.addColumns();
    
     client.close();
 

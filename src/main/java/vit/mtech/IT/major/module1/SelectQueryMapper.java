@@ -13,19 +13,22 @@ import com.datastax.driver.core.*;
  *
  * @author SanjayV
  */
-class Mapper
+class Mapper1
 {
+    static int flag=0;
     ArrayList<String> al=new ArrayList<String>();
     ArrayList<String> find=new ArrayList<String>();
     ArrayList<String> param=new ArrayList<String>();
     String Ontology="http://www.semanticweb.org/sanjayv/ontologies/2013/11/untitled-ontology-11#";
     String pred="http://www.w3.org/2000/01/rdf-schema#";
+    String queryString="";
     Cluster cluster;
     Session session;
           
     public void map()
     {
-          String query="SELECT ?subject ?object WHERE { ?Subject rdfs:subClassOf ?Object }";
+        int flag=0;
+          String query="SELECT * WHERE { ?Subject ?predicate ?Object }";
           String q[]=query.split(" ");
           int i=0;
           
@@ -44,10 +47,10 @@ class Mapper
               }
               else
               {
-                  find.add(al.get(j).substring(1));
+                  find.add(al.get(j));
               }
           }
-          for(int j=0;j<q.length;j++)
+          /*for(int j=0;j<q.length;j++)
           {
               if(q[j].contains("rdfs:"))
               {
@@ -59,8 +62,19 @@ class Mapper
               {
                   continue;
               }
+          }*/
+          for(int j=0;j<q.length;j++)
+          {
+              if(q[j].equals("WHERE"))
+              {
+                  flag=j+2;
+              }
           }
-        //System.out.println(find);
+          for(int j=flag;j<q.length-1;j++)
+          {
+              find.add(q[j]);
+          }
+        System.out.println(find);
          
     }
     public void connect()
@@ -77,23 +91,59 @@ class Mapper
         session = cluster.connect();
     }
     }
+    public void init()
+    {
+        session.execute("USE rdf;");
+    }
     
      public void cqlquery()
      {
         // param.add(null);
-         String queryString="SELECT"+" "+find.get(0)+","+" "+find.get(1)+" "+"FROM rdf_spo"+" "+"WHERE predicate='"+pred+find.get(2)+"';";
-         session.execute("USE rdf;");
+         for(String c:find)
+         {
+             if(c.equals("*"))
+             {
+                 queryString="SELECT"+" "+find.get(0)+" "+"FROM SO_RDF;";
+             }
+         }
+         
+         
+         
          ResultSet result=session.execute(queryString);
-       // System.out.println(String.format("subject", "object",
-      // "-------------------------------+-----------------------+--------------------"));
-    for (Row row : result) {
-    //System.out.println(String.format("%-30s\t%-20s\t%-20s", row.getString("subject"),
-   // row.getString("object")));
-    String x=row.getString("subject");
-    String y=row.getString("object");
-    System.out.println(x+"   "+y);
-    }
-     System.out.println();
+         
+         //ResultSet result=session.execute("SELECT * from TestRDF WHERE subject='http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/ProductType18';");
+         
+         ColumnDefinitions c=result.getColumnDefinitions();
+         int count=c.size();
+       
+       for(Row row:result)
+       {
+           flag++;
+           System.out.println("--------------------------------------------------------------------------------------------------------- ");
+            
+           for(int i=0;i<count;i++)
+           {
+               if(row.isNull(i))
+               {
+                   continue;
+               }
+               else
+               {
+                   
+                   String val=row.getString(i);
+                  
+                           
+                   
+                   System.out.println(val);
+                   
+                   
+               }
+           }
+       }
+        
+         
+
+System.out.println("Count is"+flag);
      }
      public void close() {
     cluster.shutdown();
@@ -103,13 +153,14 @@ class Mapper
     
     
 }
-public class SPARQueryMapper {
+public class SelectQueryMapper {
     
     public static void main(String args[])
     {
-        Mapper m=new Mapper();
+        Mapper1 m=new Mapper1();
         m.map();
         m.connect();
+        m.init();
         m.cqlquery();
         m.close();
         

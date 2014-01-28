@@ -76,7 +76,7 @@ public class JenaInference {
         Model schema = FileManager.get().loadModel("C:\\Users\\SanjayV\\SkyDrive\\Documents\\final1.owl");
         Model data = FileManager.get().loadModel("C:\\Users\\SanjayV\\SkyDrive\\Documents\\finalrdf.rdf");
         InfModel infmodel = ModelFactory.createRDFSModel(schema, data);
-        com.hp.hpl.jena.rdf.model.Resource A=infmodel.getResource("http://www.semanticweb.org/sanjayv/ontologies/2013/11/untitled-ontology-11#A");
+        com.hp.hpl.jena.rdf.model.Resource A=infmodel.getResource("http://www.semanticweb.org/sanjayv/ontologies/2013/11/untitled-ontology-11#Sea");
          com.hp.hpl.jena.rdf.model.Resource config = ModelFactory.createDefaultModel()
                       .createResource()
                       .addProperty(ReasonerVocabulary.PROPsetRDFSLevel, "simple");
@@ -107,12 +107,12 @@ public class JenaInference {
             Statement stmt = i.nextStatement();
             String sa=stmt.toString();
            
-            //System.out.println(sa);
+            System.out.println(sa);
             String sp[]=sa.split(" ");
             
             String st=sp[0].substring(1, sp[0].length()-1);
-            String st1=sp[2].substring(1, sp[2].length()-1);
-            System.out.println(st+" : "+st1);
+            String st1=sp[2].substring(0, sp[2].length()-1);
+           // System.out.println(st+" : "+st1);
             //System.out.println(" - " + PrintUtil.print(stmt));
            
         }

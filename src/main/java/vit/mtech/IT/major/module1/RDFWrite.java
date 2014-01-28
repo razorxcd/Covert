@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package vit.mtech.it.major.module1;
+package vit.mtech.IT.major.module1;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -42,7 +42,7 @@ public class RDFWrite {
             UnavailableException, TimedOutException, TException, AuthenticationException,
             AuthorizationException, MalformedURLException, IOException, RDFParseException, RDFHandlerException 
     {
-    File uni = new File("C:\\Users\\SanjayV\\SkyDrive\\Documents\\final1.owl");
+    File uni = new File("C:\\Users\\SanjayV\\SkyDrive\\Documents\\export.nt");
         //java.net.URL documentUrl = new URL("F:\\Cassandra\\stardog\\examples\\data\\University.owl");
         URL documentUrl = ((uni.toURI()).toURL());
         InputStream inputStream = documentUrl.openStream();
@@ -55,7 +55,7 @@ public class RDFWrite {
         rdfParser.setRDFHandler(collector);
 
         rdfParser.parse(inputStream, documentUrl.toString());
-        FileOutputStream out = new FileOutputStream("C:\\Users\\SanjayV\\SkyDrive\\Documents\\finalrdf.rdf");
+        FileOutputStream out = new FileOutputStream("C:\\Users\\SanjayV\\SkyDrive\\Documents\\FOAFV1.rdf");
         RDFWriter writer = Rio.createWriter(RDFFormat.RDFXML, out);
 
         writer.startRDF();
