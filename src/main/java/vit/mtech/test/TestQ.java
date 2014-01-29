@@ -236,7 +236,7 @@ class QueryMapper
                        }
                  for(int fg=0;fg<f.size();fg++)
                  {
-                    //System.out.println("FLAGS :" +fg);
+                    System.out.println("FLAGS :" +fg);
                  }
                  if(f.get(0)==0)
                  {

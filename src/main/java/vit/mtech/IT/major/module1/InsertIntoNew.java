@@ -83,57 +83,28 @@ class Jena
             String first=sp[0].substring(1, sp[0].length());
            // System.out.println(first);
             first=first.replace("'", "");
-            first=first.replace(ont,"tst:");
+            first=" "+first;
+            
+           // first=first.replace(ont,"tst:");
             
             String last=sp[2].substring(0, sp[2].length()-1);
            //System.out.println(last);
             last=last.replace("'", "");
-            last=last.replace(ont,"tst:");
+            
+            //last=last.replace(ont,"tst:");
             String mid=" ";
-            
-            //System.out.println(first+" ---> "+last);
-            /*if(!sp[1].contains("#"))
-            {
-                sp[1]=sp[1].replace(" ", "");
-                URI uri = URI.create(sp[1]);
-                 String path = uri.getPath();
-                //System.out.println(path.substring(path.lastIndexOf('/') + 1));
-                 mid=path.substring(path.lastIndexOf('/') + 1);
-                 if(map.get(mid).equals("false"))
-                        {
-                            //s
-                            //clust=last;
-                            //System.out.println("inserting"+first+" AND "+cluster+"-->"+msplit[j]);
-                           //System.out.println(last);
-                            
-                            session.execute("INSERT INTO Tim (subject, " +mid+ ") VALUES ('" +first+ "'," + " '" +last+ "');");
-                            map.put(mid, "true");
-                           
-                        }
-                        else
-                           {
-                            String x="";
-                            ResultSet rs=session.execute("SELECT * FROM Tim WHERE subject='"+first+"';");
-                            for(Row row:rs)
-                            {
-                               x=row.getString(mid)+"|"+last;
-                                
-                            }
-                            
-                            
-                            session.execute("INSERT INTO Tim (subject, " +mid+ ") VALUES ('" +first+ "'," + " '" +x+ "');");
-                            
-                            
-                               
-                           }
-                 
+            mid=sp[1];
+            String msplit[]=mid.split("#");
+            //System.out.println(first+"------->"+last);
+            //if(first.equals(last))
+            //{
                 
-            }*/
-            
-                    mid=sp[1];
-                    String msplit[]=mid.split("#");
-            //ResultSet rt=session.execute("SELECT * FROM finalrdf;");
-          
+                //System.out.println("True");
+               // continue;
+           // }
+            //else
+            //{
+      
                 for(int j=0;j<msplit.length;j++)
                 {
                     if(j==1)
@@ -172,19 +143,12 @@ class Jena
                             
                                
                            }
-                           
-                           
-                            
-                                    
-                            
+ 
                         }
-                        
-                    }
-                    }
-                
-            }
-        
-                
+                    //}
+                 }
+                }
+               }
             }
          }
             

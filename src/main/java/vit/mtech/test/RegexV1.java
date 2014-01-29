@@ -22,35 +22,33 @@ import org.apache.commons.collections4.map.MultiValueMap;
  *
  * @author SanjayV
  */
+class Pair
+{
+   public String key;
+   public String value;
+
+   public Pair(String key, String value)
+   {
+      this.key = key;
+      this.value = value;
+   }
+   public void print()
+   {
+       System.out.println(key+value);
+   }
+
+}
 public class RegexV1 {
     public static void main(String args[])
     {
-       // create multimap to store key and values
-        MultiMap multiMap = new MultiValueMap();
- 
-        // put values into map for A
-        multiMap.put("A", "Apple");
-        multiMap.put("A", "Aeroplane");
- 
-        // put values into map for B
-        multiMap.put("B", "Bat");
-        multiMap.put("B", "Banana");
- 
-        // put values into map for C
-        multiMap.put("C", "Cat");
-        multiMap.put("C", "Car");
- 
-        // retrieve and display values
-        System.out.println("Fetching Keys and corresponding [Multiple] Values n");
- 
-        // get all the set of keys
-        Set<String> keys = multiMap.keySet();
- 
-        // iterate through the key set and display key and values
-        for (String key : keys) {
-            System.out.println("Key = " + key);
-           List<String> val=(List<String>) multiMap.get(key);
-           System.out.println(val);
-    }
+        Pair p[]=new Pair[10];
+        for(int i=0;i<p.length;i++)
+        {
+            
+            p[i]=new Pair("String","String");
+            //System.out.println(p[i]);
+            p[i].print();
+        }
+      
 }
 }
