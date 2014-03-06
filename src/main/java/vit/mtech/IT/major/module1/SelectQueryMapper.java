@@ -103,7 +103,7 @@ class Mapper1
          {
              if(c.equals("*"))
              {
-                 queryString="SELECT"+" "+find.get(0)+" "+"FROM SO_RDF;";
+                 queryString="SELECT"+" "+find.get(0)+" "+"FROM finalrdf;";
              }
          }
          

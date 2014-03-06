@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package vit.mtech.IT.major.module1;
+package vit.mtech.test;
 import com.datastax.driver.core.*;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -18,6 +18,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.cassandra.thrift.AuthenticationException;
 import org.apache.cassandra.thrift.AuthorizationException;
 import org.apache.cassandra.thrift.InvalidRequestException;
@@ -36,6 +38,8 @@ import org.openrdf.rio.RDFParser;
 import org.openrdf.rio.RDFWriter;
 import org.openrdf.rio.Rio;
 import org.openrdf.rio.helpers.StatementCollector;
+import vit.mtech.test.TestInsert;
+import vit.mtech.test.TestInsertRio;
 
 /**
  *
@@ -46,8 +50,11 @@ class setup{
     public static ArrayList al=new ArrayList();
     public static ArrayList result=new ArrayList();
     public static HashMap<String, Integer> imp=new HashMap();
+    public static HashMap<String, String> map=new HashMap();
     public static Session session;
     public static Cluster cluster;
+    public static final String db="Tim";
+    File uni = new File("C:\\Users\\SanjayV\\SkyDrive\\Documents\\Tim.rdf");
     
     
     
@@ -59,7 +66,7 @@ class setup{
             AuthorizationException, MalformedURLException, IOException, RDFParseException, RDFHandlerException 
     {
         
-        File uni = new File("F:\\Cassandra\\stardog\\examples\\data\\University.owl");
+        
         //java.net.URL documentUrl = new URL("F:\\Cassandra\\stardog\\examples\\data\\University.owl");
         URL documentUrl = ((uni.toURI()).toURL());
         InputStream inputStream = documentUrl.openStream();
@@ -75,15 +82,15 @@ class setup{
         Collection<Statement> ite=collector.getStatements();
         for(Statement sta:ite)
         {
-            String p[] = null;
+            String p[]=new String[2];
             String pred=sta.getPredicate().toString();
-            System.out.println(pred);
+           // System.out.println(pred);
             if(!pred.contains("#"))
             {
                  URI uri = URI.create(pred);
                  String path = uri.getPath();
                 //System.out.println(path.substring(path.lastIndexOf('/') + 1));
-               // al.add(path.substring(path.lastIndexOf('/') + 1));
+                 al.add(path.substring(path.lastIndexOf('/') + 1));
             }
             else
             {
@@ -130,7 +137,9 @@ public void connecti() {
     public void init()
     {
          session.execute("USE rdf;");
-         session.execute("CREATE TABLE University( subject text, PRIMARY KEY(subject));");
+         //session.execute("tracing on;");
+         //session.execute("CREATE TABLE "+db+"( subject text, PRIMARY KEY(subject));");
+         //session.execute("TRUNCATE BSBM1M;");
     }
     public void schema()
     {
@@ -140,7 +149,8 @@ public void connecti() {
         for(int i=0;i<result.size();i++)
         {
          System.out.println("Adding Column: "+ result.get(i) + " " );
-         session.execute("ALTER TABLE University ADD "+result.get(i)+" text;");
+         //session.execute("ALTER TABLE "+db+" ADD "+result.get(i)+" text;");
+         map.put(result.get(i).toString(), "false");
         }
         
     }
@@ -150,13 +160,42 @@ public void connecti() {
         for(int i=0;i<result.size();i++)
         {
         System.out.println("Creating Index on: "+ result.get(i) + " " );
-        session.execute("CREATE INDEX ON University ("+result.get(i)+");");
+       // session.execute("CREATE INDEX ON "+db+" ("+result.get(i)+");");
         }
         
+    }
+    public void populateSchema(TestInsertRio rio)
+    {
+        try {
+            rio.connecti();
+            rio.init();
+            rio.insert(uni, db);
+            rio.close();
+        } catch (MalformedURLException ex) {
+            Logger.getLogger(setup.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException | RDFParseException | RDFHandlerException ex) {
+            Logger.getLogger(setup.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    public void populateSchema(TestInsert jena)
+    {
+        try {
+            jena.connecti();
+            jena.init();
+            jena.populateWithJenaInference(uni, db);
+            jena.close();
+        } catch (MalformedURLException ex) {
+            Logger.getLogger(setup.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     public void close()
     {
           cluster.shutdown();
+//        try {
+//            //Process p = Runtime.getRuntime().exec("shutdown -s");
+//        } catch (IOException ex) {
+//            Logger.getLogger(setup.class.getName()).log(Level.SEVERE, null, ex);
+//        }
          
     }
    
@@ -169,6 +208,8 @@ public class NewSchemaV1 {
      public static void main(String args[])
     {
         setup i=new setup();
+        TestInsertRio rio=new TestInsertRio();
+        TestInsert jena=new TestInsert();
         i.connecti();
         i.init();
         try
@@ -181,6 +222,7 @@ public class NewSchemaV1 {
         }
         i.schema();
         i.createIndex();
+        i.populateSchema(rio);
         i.close();
       
     }

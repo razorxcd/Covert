@@ -48,8 +48,8 @@ import java.util.Map;
     public static void main(String args[]) throws MalformedURLException, FileNotFoundException
     {
        
-        File uni = new File("C:\\Users\\SanjayV\\SkyDrive\\Documents\\finalrdf.rdf");
-         FileOutputStream out = new FileOutputStream("C:\\Users\\SanjayV\\SkyDrive\\Documents\\Animal.rdf");
+        File uni = new File("C:\\Users\\SanjayV\\SkyDrive\\Documents\\benchmark250k.rdf");
+         FileOutputStream out = new FileOutputStream("C:\\Users\\SanjayV\\SkyDrive\\Documents\\Catalog.rdf");
         //java.net.URL documentUrl = new URL("F:\\Cassandra\\stardog\\examples\\data\\University.owl");
         URL documentUrl = ((uni.toURI()).toURL());
         
@@ -65,8 +65,14 @@ import java.util.Map;
         InfModel infmodel = ModelFactory.createRDFSModel(model);
         
         StmtIterator stmts = model.listStatements();
-        StmtIterator stmts1 = model.listStatements();
-        infmodel.write(out, "RDF/XML");
+        StmtIterator stmts1 = infmodel.listStatements();
+        while(stmts1.hasNext())
+            
+        {
+            System.out.println(stmts1.next().toString());
+        }
+        
+        //infmodel.write(out, "RDF/XML");
         
        
        

@@ -77,7 +77,7 @@ class Jena
             String sa=stmt.toString();
             //System.out.println(map.get("type"));
            
-           System.out.println(sa);
+           //System.out.println(sa);
             String sp[]=sa.split(",");
             
             String first=sp[0].substring(1, sp[0].length());
@@ -94,6 +94,7 @@ class Jena
             //last=last.replace(ont,"tst:");
             String mid=" ";
             mid=sp[1];
+            System.out.println(first+"--->"+mid+"---->"+last);
             String msplit[]=mid.split("#");
             //System.out.println(first+"------->"+last);
             //if(first.equals(last))
@@ -123,7 +124,7 @@ class Jena
                             //System.out.println("inserting"+first+" AND "+cluster+"-->"+msplit[j]);
                            //System.out.println(last);
                             
-                            session.execute("INSERT INTO University (subject, " +msplit[j]+ ") VALUES ('" +first+ "'," + " '" +last+ "');");
+                           // session.execute("INSERT INTO University (subject, " +msplit[j]+ ") VALUES ('" +first+ "'," + " '" +last+ "');");
                             map.put(msplit[j], "true");
                             continue;
                         }
@@ -138,7 +139,7 @@ class Jena
                             }
                             
                             
-                            session.execute("INSERT INTO University (subject, " +msplit[j]+ ") VALUES ('" +first+ "'," + " '" +x+ "');");
+                           // session.execute("INSERT INTO University (subject, " +msplit[j]+ ") VALUES ('" +first+ "'," + " '" +x+ "');");
                             continue;
                             
                                
@@ -161,7 +162,7 @@ public class InsertIntoNew extends Jena{
         Jena j=new Jena();
         j.connecti();
         j.init();
-        File uni = new File("F:\\Cassandra\\stardog\\examples\\data\\University.owl");
+        File uni = new File("C:\\Users\\SanjayV\\SkyDrive\\Documents\\benchmark250k.rdf");
         //java.net.URL documentUrl = new URL("F:\\Cassandra\\stardog\\examples\\data\\University.owl");
         URL documentUrl = ((uni.toURI()).toURL());
         
@@ -182,18 +183,20 @@ public class InsertIntoNew extends Jena{
         {
             count=0;
             counts++;
-            System.out.println(counts);
+           // System.out.println(counts);
             String p[]=null;
             
             String pred=stmts.next().getPredicate().toString();
-             /*if(!pred.contains("#"))
+            //System.out.println(pred);
+             if(!pred.contains("#"))
              {
                  URI uri = URI.create(pred);
                  String path = uri.getPath();
                 //System.out.println(path.substring(path.lastIndexOf('/') + 1));
                 result.add(path.substring(path.lastIndexOf('/') + 1));
-             }*/
-            
+             }
+             else
+             {
                 p=pred.split("#");
                 for(int i=0;i<p.length;i++)
                 {
@@ -203,6 +206,7 @@ public class InsertIntoNew extends Jena{
                     break;
                 }
                 }
+             }
              
             
             for(int i=0;i<result.size();i++)
@@ -213,11 +217,7 @@ public class InsertIntoNew extends Jena{
             
         }
           
-        for(Map.Entry<String, String> me:map.entrySet())
-       {
-           
-           System.out.println(me.getKey()+"---->"+me.getValue());
-       }
+       
         while(stmts1.hasNext())
         {
             //System.out.println(stmts1.next().getSubject().toString());
