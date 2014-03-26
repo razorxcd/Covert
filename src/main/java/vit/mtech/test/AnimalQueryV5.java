@@ -71,7 +71,7 @@ import java.util.logging.Logger;
  *
  * @author SanjayV
  */
-class QueryV4 {
+class QueryV5 {
 
     int flag;
     static String queryString;
@@ -82,6 +82,7 @@ class QueryV4 {
     static ArrayList<String> paramv1 = new ArrayList<>();
     static ArrayList<List<String>> SubQueries = new ArrayList<>();
     static ArrayList<List<String>> reshold = new ArrayList<>();
+    static ArrayList<HashMap<String, ArrayList<String>>> resholdv1 =new ArrayList<>();
     static ArrayList<Integer> fil = new ArrayList<>();
     //static ArrayList<List<String>> Results = new ArrayList<>();
     //static ArrayList<String> results=new ArrayList<String>();
@@ -129,14 +130,14 @@ class QueryV4 {
     Cluster cluster;
     Session session;
 
-    public QueryV4(String str) {
+    public QueryV5(String str) {
         queryString = str;
     }
 
     public void connecti() {
         cluster = Cluster.builder().addContactPoint("localhost").build();
         Metadata metadata = cluster.getMetadata();
-        //System.out.println("Cassandra connection established");
+        System.out.println("Cassandra connection established");
         System.out.printf("Connected to cluster: %s\n", metadata.getClusterName());
         for (Host host : metadata.getAllHosts()) {
             System.out.printf("Datatacenter: %s; Host: %s; Rack: %s \n", host.getDatacenter(), host.getAddress(), host.getRack());
@@ -147,9 +148,9 @@ class QueryV4 {
 //
 //    public void setQuery() {
 //        Scanner stdin = new Scanner(new BufferedInputStream(System.in));
-//        //System.out.println(" Enter the Query:");
+//        System.out.println(" Enter the Query:");
 //        queryString = stdin.nextLine();
-//        ////System.out.println(Math.abs(stdin.nextLong() - stdin.nextLong()));
+//        //System.out.println(Math.abs(stdin.nextLong() - stdin.nextLong()));
 //    }
 
     public void init() {
@@ -203,7 +204,7 @@ class QueryV4 {
          */
         for (int i = 0; i < param.size(); i++) {
 
-            //System.out.println("Putting flase for:" + param.get(i));
+            System.out.println("Putting flase for:" + param.get(i));
             //filtertabs.put(param.get(i), "false");
             expression.put(param.get(i), "false");
             // exptabs.put(param.get(i), "false");
@@ -233,7 +234,7 @@ class QueryV4 {
             while (j < paramv1.size()) {
 
                 if (paramv1.get(j).equals(".") || paramv1.get(j).equals("n")) {
-                    //System.out.println("It does");
+                    System.out.println("It does");
                     j++;
                     continue here;
                 }
@@ -241,11 +242,11 @@ class QueryV4 {
                 if (x != 3) {
 //                    if(param.get(j).equals("n"))
 //                {
-//                    //System.out.println("It is going");
+//                    System.out.println("It is going");
 //                    continue here;
 //                }
                     if (expression.get(paramv1.get(j)).equals("true")) {
-                        //System.out.println("caught here");
+                        System.out.println("caught here");
                         SubQueries.get(i).add("xox");
                         j++;
                         x++;
@@ -253,16 +254,16 @@ class QueryV4 {
                     } else if (paramv1.get(j).contains("FILTER")) {
                         filter = true;
                         fil.add(i);
-                        //System.out.println("Filter is there at" + j);
+                        System.out.println("Filter is there at" + j);
                         int y = j + 1;
 
                         exp = "FILTER" + " ";
                         while (!paramv1.get(y).equals("n")) {
-                            //System.out.println("going in here~");
+                            System.out.println("going in here~");
 
                             exp = exp + paramv1.get(y) + " ";
-                            //System.out.println("Here-->" + exp);
-                            //System.out.println("putting" + paramv1.get(y) + "to true");
+                            System.out.println("Here-->" + exp);
+                            System.out.println("putting" + paramv1.get(y) + "to true");
                             expression.put(paramv1.get(y), "true");
 
                             y++;
@@ -275,7 +276,7 @@ class QueryV4 {
                         x++;
                         continue here;
                     } else {
-                        //System.out.println("hey");
+                        System.out.println("hey");
                         SubQueries.get(i).add(paramv1.get(j));
                         j++;
                         x++;
@@ -289,15 +290,15 @@ class QueryV4 {
         // This operation is used to keep tabs on all subjects and objects for ..umm reasons unknown. Not yet.
         for (int x = 0; x < SubQueries.size(); x++) {
             subtabs.put(SubQueries.get(x).get(0), x);
-            //System.out.println(SubQueries.get(x).get(0) + "-->" + SubQueries.get(x).get(2));
+            System.out.println(SubQueries.get(x).get(0) + "-->" + SubQueries.get(x).get(2));
             predtabs.put(SubQueries.get(x).get(2), x);
 
         }
-        //System.out.println(SubQueries);
+        System.out.println(SubQueries);
 
 
-        //System.out.println(param);
-        //System.out.println(paramv1);
+        System.out.println(param);
+        System.out.println(paramv1);
 
 
     }
@@ -306,10 +307,10 @@ class QueryV4 {
         //int tabs=0;
 
 //        if (filter == true) {
-//            //System.out.println("I'm calling exmap but it's not doing it;s job");
+//            System.out.println("I'm calling exmap but it's not doing it;s job");
 //           exMapFill();
 //        } else {
-//            // //System.out.println("I am not even calling exmap");
+//            // System.out.println("I am not even calling exmap");
 //        }
         ArrayList<String> resultvars = (ArrayList<String>) query.getResultVars();
 
@@ -319,6 +320,7 @@ class QueryV4 {
             int j = 0;
             int x = 0;
             reshold.add(new ArrayList<String>());
+            resholdv1.add(new HashMap<String, ArrayList<String>>());
             ArrayList<String> qstrings = new ArrayList<>();
             tabs.put("subject", "false");
             tabs.put("predicate", "false");
@@ -328,7 +330,7 @@ class QueryV4 {
 
             here:
             while (j < SubQueries.size()) {
-                //System.out.println("Check to skip!! " + SubQueries.get(i).get(j));
+                System.out.println("Check to skip!! " + SubQueries.get(i).get(j));
                 if (SubQueries.get(i).get(j).contains("FILTER")) {
                     break here;
                 } else if (SubQueries.get(i).get(j).equals("xox")) {
@@ -337,7 +339,7 @@ class QueryV4 {
                 }
                 //tabs++;
                 while (x < 3) {
-                    ////System.out.println("Hello");
+                    //System.out.println("Hello");
                     qstrings.add(SubQueries.get(i).get(j));
                     j++;
                     x++;
@@ -352,7 +354,7 @@ class QueryV4 {
                 } else {
                     URI uri = URI.create(qstrings.get(1));
                     String path = uri.getPath();
-                    ////System.out.println(path.substring(path.lastIndexOf('/') + 1));
+                    //System.out.println(path.substring(path.lastIndexOf('/') + 1));
                     String mod = "x:" + path.substring(path.lastIndexOf('/') + 1);
                     qstrings.set(1, mod);
                 }
@@ -365,11 +367,11 @@ class QueryV4 {
 
                 if (i != 0) {
                     if (results.containsKey(qstrings.get(0))) {
-                        //System.out.println("REMOVING VALUE FOR KEY:" + qstrings.get(0));
+                        System.out.println("REMOVING VALUE FOR KEY:" + qstrings.get(0));
                         results.remove(qstrings.get(0));
                         //results.put(qstrings.get(0), "N");
                     }
-                    if(results.containsKey(qstrings.get(2)))
+                    else if(results.containsKey(qstrings.get(2)))
                     {
                         results.remove(qstrings.get(2));
                     }
@@ -395,16 +397,16 @@ class QueryV4 {
 
                     if (filterops == true) {
                         int lastfound = findTheLastOccurence(qstrings.get(0));
-                        //System.out.println("LastFound ==" + lastfound);
+                        System.out.println("LastFound ==" + lastfound);
                         String qstring[] = qstrings.get(1).split(":");
-                        //System.out.println("Expression to be fed to FILTEROPS" + expr);
+                        System.out.println("Expression to be fed to FILTEROPS" + expr);
                         stackOps so = new stackOps(expr);
                         so.connecti();
                         so.init();
-                        //System.out.println("Going into So.Filterout--->" + lastfound + " " + i + " " + qstring[1] + qstrings.get(2) + qstrings.get(0));
+                        System.out.println("Going into So.Filterout--->" + lastfound + " " + i + " " + qstring[1] + qstrings.get(2) + qstrings.get(0));
                         so.filterOut(lastfound, i, qstring[1], qstrings.get(2), qstrings.get(0));
 
-                        //System.out.println("Filterops Started");
+                        System.out.println("Filterops Started");
                         so.close();
                         break here;
 
@@ -422,18 +424,18 @@ class QueryV4 {
                 } else if (qstrings.get(2).contains("?")) {
                     tabs.put("object", "true");
                 } else if (qstrings.get(0).contains("?")) {
-                    ////System.out.println("Look here goddamnit!");
+                    //System.out.println("Look here goddamnit!");
                     tabs.put("subject", "true");
 
                 }
 
 
-                //System.out.println(tabs.get("subject") + tabs.get("object"));
+                System.out.println(tabs.get("subject") + tabs.get("object"));
 
 //                for (int li = 0; li < qstrings.size(); li++) {
 //
 //                    if (qstrings.get(li).contains("?")) {
-//                        ////System.out.println(qstrings.get(li)+" contains ?");
+//                        //System.out.println(qstrings.get(li)+" contains ?");
 //                        f.add(qstrings.indexOf(qstrings.get(li)));
 //
 //
@@ -444,11 +446,11 @@ class QueryV4 {
 
                 /* if(results.containsKey(qstrings.get(0)))
                  {
-                 //System.out.println("It does contain it");
+                 System.out.println("It does contain it");
                  }
                  else
                  {
-                 //System.out.println("Something is WRONG!!");
+                 System.out.println("Something is WRONG!!");
                  }*/
 
                 /*
@@ -459,14 +461,14 @@ class QueryV4 {
                  {
                                
                  qstrings.set(l, qstrings.get(l).replace("\"",""));
-                 // //System.out.println(qstrings.get(l));
+                 // System.out.println(qstrings.get(l));
                  }
                  else if(qstrings.get(l).contains("\n"))
                  {
-                 //System.out.println(" THERE!");
+                 System.out.println(" THERE!");
                            
                  qstrings.set(l, qstrings.get(l).replace("\n",""));
-                 ////System.out.println(qstrings.get(l));
+                 //System.out.println(qstrings.get(l));
                                
                  }
                  else
@@ -480,20 +482,20 @@ class QueryV4 {
 
 
                 if (tabs.get("subject").equals("true") && tabs.get("object").equals("true") && tabs.get("predicate").equals("true")) {
-                    //System.out.println("Select * case");
+                    System.out.println("Select * case");
                     String cql = "SELECT * from " + db + ";";
                     ResultSet result = session.execute(cql);
                     ColumnDefinitions c = result.getColumnDefinitions();
                     int count = c.size();
                     for (Row row : result) {
-                        //System.out.println("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+                        System.out.println("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
                         for (int ix = 0; ix < count; ix++) {
                             if (row.isNull(ix)) {
                                 continue;
                             } else {
 
                                 String val = row.getString(ix);
-                                //System.out.println(val);
+                                System.out.println(val);
                                 //results.put(val, c);
 
                             }
@@ -505,28 +507,28 @@ class QueryV4 {
                     /*Check whether the Subject is in the HashMap as key*/
                     if (tabs.get("object").equals("true") && !hash.containsKey(qstrings.get(0)) && !hash.containsKey(qstrings.get(2))) {
                         System.out.println("Subject and Object are missing!");
-                        hash.put(qstrings.get(0), "true");
-                                hash.put(qstrings.get(2), "true");
 //Comments added!
 //                        for (int l = 0; l < qstrings.size(); l++) {
 //                            if (qstrings.get(l).contains("\"")) {
 //
 //                                qstrings.set(l, qstrings.get(l).replace("\"", ""));
-//                                // //System.out.println(qstrings.get(l));
+//                                // System.out.println(qstrings.get(l));
 //                            } else if (qstrings.get(l).contains("\n")) {
 //
 //                                qstrings.set(l, qstrings.get(l).replace("\n", ""));
-//                                ////System.out.println(qstrings.get(l));
+//                                //System.out.println(qstrings.get(l));
 //
 //                            } else {
 //                                continue;
 //                            }
 //
 //                        }
+                        resholdv1.get(i).put(qstrings.get(0), new ArrayList<String>());
+                        resholdv1.get(i).put(qstrings.get(2), new ArrayList<String>());
                         String ysplit[];
                         String pre[] = qstrings.get(1).split(":");
                         String cql = "SELECT subject, " + pre[1] + " from " + db + ";";
-                        //System.out.println(cql);
+                        System.out.println(cql);
                         ResultSet result = session.execute(cql);
                         for (Row row : result) {
                             if (row.isNull(pre[1])) {
@@ -534,8 +536,7 @@ class QueryV4 {
                             } else {
                                 String xx = row.getString("subject");
                                 String y = row.getString(pre[1]);
-                                // //System.out.println("V---->"+y);
-                                
+                                // System.out.println("V---->"+y);
                                 y = y.replace("|", "*");
                                 ysplit = y.split("\\*");
                                 for (int lis = 0; lis < ysplit.length; lis++) {
@@ -544,18 +545,18 @@ class QueryV4 {
                                     }
                                 }
                                 ArrayList<String> ysplitlist = new ArrayList<>(Arrays.asList(ysplit));
-                                //System.out.println(ysplitlist);
+                                System.out.println(ysplitlist);
                                 HashSet set = new HashSet(ysplitlist);
 
                                 Iterator iterator = set.iterator();
                                 while (iterator.hasNext()) {
                                     String it = iterator.next().toString();
                                     if (it.contains("null")) {
-                                        //System.out.println("FOund");
+                                        System.out.println("FOund");
                                         continue;
                                     } else {
                                         if (it.equals("")) {
-                                            //System.out.println("Got it");
+                                            System.out.println("Got it");
                                             continue;
                                         } else {
 //                                            if ((param.size() / 3) - 1 != 0) {
@@ -564,7 +565,7 @@ class QueryV4 {
 //                                                        reshold.get(i).add(it);
 //                                                        results.put(qstrings.get(2), it);
 //                                                        hash.put(qstrings.get(2), it);
-//                                                        //System.out.println("Case 1");
+//                                                        System.out.println("Case 1");
 //                                                    } else if (SubQueries.get(i + 1).get(0).equals(qstrings.get(0))) {
 //                                                        reshold.get(i).add(xx);
 //                                                        reshold.get(i).add(it);
@@ -572,21 +573,21 @@ class QueryV4 {
 //                                                        results.put(qstrings.get(2), it);
 //                                                        hash.put(qstrings.get(2), it);
 //                                                        hash.put(qstrings.get(0), xx);
-//                                                        //System.out.println("Case 2");
+//                                                        System.out.println("Case 2");
 //                                                    } else if (SubQueries.get(i + 1).get(0).equals(qstrings.get(2)) && SubQueries.get(i + 1).get(0).equals(qstrings.get(0))) {
-//                                                        //System.out.println("Case 3");
+//                                                        System.out.println("Case 3");
 //                                                        continue;
 //
 //                                                    } else {
-//                                                        //System.out.println("Case 4");
+//                                                        System.out.println("Case 4");
 //                                                        results.put(qstrings.get(0), xx);
 //                                                        results.put(qstrings.get(2), it);
 //                                                        hash.put(qstrings.get(2), it);
 //                                                        hash.put(qstrings.get(0), xx);
 //                                                    }
-//                                                    // //System.out.println(" The next query's first varibale is"+SubQueries.get(i+1).get(0));
+//                                                    // System.out.println(" The next query's first varibale is"+SubQueries.get(i+1).get(0));
 //                                                } else {
-//                                                    //System.out.println("you screwed up!");
+//                                                    System.out.println("you screwed up!");
 //                                                }
 //                                            } else {
 //                                                results.put(qstrings.get(0), xx);
@@ -595,35 +596,43 @@ class QueryV4 {
 //                                                hash.put(qstrings.get(0), xx);
 //                                            }
                                             //For this reason!
-                                            if (subtabs.containsKey(qstrings.get(0)) && !subtabs.containsKey(qstrings.get(2))) {
-                                                if (resultvars.contains(qstrings.get(2).replace("?", ""))) {
-                                                    results.put(qstrings.get(2), it);
-                                                }
-
-                                                reshold.get(i).add(xx);
-                                                results.put(qstrings.get(0), xx);
-                                                
-                                                //System.out.println("Case 1");
-                                            } else if (subtabs.containsKey(qstrings.get(2))) {
-                                                if (resultvars.contains(qstrings.get(0).replace("?", ""))) {
-                                                    results.put(qstrings.get(0), xx);
-                                                }
-                                                reshold.get(i).add(it);
-                                                //System.out.println("putting " + it + " in " + qstrings.get(2));
-                                                results.put(qstrings.get(2), it);
-                                                
-                                                //System.out.println("Case 2");
-                                            } else if (!subtabs.containsKey(qstrings.get(0)) && predtabs.containsKey(qstrings.get(2))) {
-                                            }
-
+//                                            if (subtabs.containsKey(qstrings.get(0)) && !subtabs.containsKey(qstrings.get(2))) {
+//                                                if (resultvars.contains(qstrings.get(2).replace("?", ""))) {
+//                                                    results.put(qstrings.get(2), it);
+//                                                }
+//
+//                                                reshold.get(i).add(xx);
+//                                                results.put(qstrings.get(0), xx);
+//                                                hash.put(qstrings.get(0), xx);
+//                                                System.out.println("Case 1");
+//                                            } else if (subtabs.containsKey(qstrings.get(2))) {
+//                                                if (resultvars.contains(qstrings.get(0).replace("?", ""))) {
+//                                                    results.put(qstrings.get(0), xx);
+//                                                }
+//                                                reshold.get(i).add(it);
+//                                                System.out.println("putting " + it + " in " + qstrings.get(2));
+//                                                results.put(qstrings.get(2), it);
+//                                                hash.put(qstrings.get(2), it);
+//                                                System.out.println("Case 2");
+//                                            } else if (!subtabs.containsKey(qstrings.get(0)) && predtabs.containsKey(qstrings.get(2))) {
+//                                            }
+                                            
+                                            
+                                            
+                                            resholdv1.get(i).get(qstrings.get(0)).add(xx);
+                                            resholdv1.get(i).get(qstrings.get(2)).add(it);
+                                            results.put(qstrings.get(0), xx);
+                                            results.put(qstrings.get(2), it);
+                                            hash.put(qstrings.get(2), it);
+                                            hash.put(qstrings.get(0), xx);
                                         }
                                     }
-                                    ////System.out.println(xx);
+                                    //System.out.println(xx);
                                     //hash.put(qstrings.get(2), y);
 
 
                                     // S//ystem.out.println(i);
-                                    ////System.out.println((param.size()/3)-1);
+                                    //System.out.println((param.size()/3)-1);
 
 
 
@@ -640,50 +649,58 @@ class QueryV4 {
                         String ysplit[];
                         String pre[] = qstrings.get(1).split(":");
                         String cql = "SELECT subject, " + pre[1] + " from " + db + ";";
-                        //System.out.println(cql);
+                        System.out.println(cql);
                         ResultSet result = session.execute(cql);
+                        resholdv1.get(i).put(qstrings.get(0), new ArrayList<String>());
+                        resholdv1.get(i).put(qstrings.get(2), new ArrayList<String>());
                         int lastfound = findTheLastOccurence(qstrings.get(0));
                         int lastfound1 = findTheLastOccurence(qstrings.get(2));
-                        //System.out.println("Last Found Subject: " + lastfound + " and Last Found Pred " + lastfound1);
+                        ArrayList<String> L1;
+                        ArrayList<String> L2;
+                        L1=resholdv1.get(lastfound).get(qstrings.get(0));
+                        L2=resholdv1.get(lastfound1).get(qstrings.get(2));
+                        System.out.println("Last Found Subject: " + lastfound + " and Last Found Pred " + lastfound1);
                         for (Row row : result) {
                             if (row.isNull(pre[1])) {
                                 continue;
                             } else {
                                 String xx = row.getString("subject");
                                 String y = row.getString(pre[1]);
-                                //System.out.println(xx + "---->" + y);
+                                System.out.println(xx + "---->" + y);
                                 y = y.replace("|", "*");
                                 ysplit = y.split("\\*");
 
                                 ArrayList<String> ysplitlist = new ArrayList<>(Arrays.asList(ysplit));
-                                //System.out.println(ysplitlist);
+                                System.out.println(ysplitlist);
                                 HashSet set = new HashSet(ysplitlist);
                                 Iterator iterator = set.iterator();
                                 wh:
                                 while (iterator.hasNext()) {
                                     String it = iterator.next().toString();
                                     if (it.contains("null")) {
-                                        //System.out.println("FOund");
+                                        System.out.println("FOund");
                                         continue wh;
                                     } else {
                                         //System.out.println("Inseide Else");
-                                        out:  for (String c:reshold.get(lastfound)) {
-                                            //System.out.println("Inside For");
-                                              for (String c1:reshold.get(lastfound1)) {
-                                                //System.out.println("Another For");
-                                                if (c.equals(xx)) {
-                                                    if (it.contains(c1)) {
-                                                        System.out.println(xx + "-----contains---->" + c1);
-                                                        reshold.get(i).add(xx);
-                                                        reshold.get(i).add(it);
+                                        out:  for (String c1:L2) {
+                                          //  System.out.println("Inside For");
+                                              for (String c:L1) {
+                                               // System.out.println("Another For");
+                                                if (c1.equals(xx)) {
+                                                    if (xx.contains(c)) {
+                                                        System.out.println("-----contains---->" );
+                                                        resholdv1.get(i).get(qstrings.get(0)).add(xx);
+                                                        resholdv1.get(i).get(qstrings.get(2)).add(it);
                                                         results.put(qstrings.get(0), xx);
                                                         results.put(qstrings.get(2), it);
 
-                                                    } else {
+                                                    } 
+                                                    else {
                                                         //System.out.println(it + " doesn't contain " + c1);
                                                         continue;
                                                     }
-                                                } else {
+                                                } 
+                                                else {
                                                     //System.out.println(" is != " + xx);
                                                     continue out;
                                                 }
@@ -702,17 +719,18 @@ class QueryV4 {
 
                     } else if (tabs.get("object").equals("true") && !hash.containsKey(qstrings.get(0)) && hash.containsKey(qstrings.get(2))) {
 
-                        //System.out.println("Subject is missing; object is taken from previous query!");
+                        System.out.println("Subject is missing; object is taken from previous query!");
+                        resholdv1.get(i).put(qstrings.get(0), new ArrayList<String>());
+                        
                         String pre[] = qstrings.get(1).split(":");
                         String cql = "SELECT subject" + "," + pre[1] + " FROM " + db + ";";
-                        hash.put(qstrings.get(2), "true");
-                        hash.put(qstrings.get(0), "true");
-                        //System.out.println(cql);
+                        System.out.println(cql);
                         ResultSet result = session.execute(cql);
-                        int lastfound = findTheLastOccurenceOfPredicate(qstrings.get(0), qstrings.get(2));
-                        //System.out.println("Lastfound--" + lastfound);
+                        int lastfound = findTheLastOccurence(qstrings.get(2));
+                        ArrayList<String> L1=resholdv1.get(lastfound).get(qstrings.get(2));
+                        System.out.println("Lastfound--" + lastfound);
                         for (Row row : result) {
-                            for (String c : reshold.get(lastfound)) {
+                            for (String c : L1) {
 
                                 if (row.isNull(pre[1])) {
                                     continue;
@@ -720,7 +738,6 @@ class QueryV4 {
                                     String ysplit[];
                                     String xx = row.getString("subject");
                                     String y = row.getString(pre[1]);
-                                    
                                     y = y.replace("|", "*");
                                     ysplit = y.split("\\*");
                                     String yfin = "";
@@ -728,27 +745,29 @@ class QueryV4 {
                                         for (int lis = 0; lis < ysplit.length; lis++) {
                                             if (!ysplit[lis].contains("null") && ysplit[lis].contains("|")) {
                                                 ysplit[lis] = ysplit[lis].substring(0, ysplit[lis].length() - 1);
-                                                //System.out.println("FISHY-->" + ysplit[lis]);
+                                                System.out.println("FISHY-->" + ysplit[lis]);
                                             }
                                         }
                                         ArrayList<String> ysplitlist = new ArrayList<>(Arrays.asList(ysplit));
-                                        // //System.out.println(ysplitlist);
+                                        // System.out.println(ysplitlist);
                                         HashSet set = new HashSet(ysplitlist);
 
                                         Iterator iterator = set.iterator();
                                         while (iterator.hasNext()) {
                                             String it = iterator.next().toString();
                                             if (it.contains("null")) {
-                                                //System.out.println("FOund");
+                                                System.out.println("FOund");
                                                 continue;
                                             } else if (it.contains(c)) {
 
-                                                reshold.get(i).add(it);
+                                             resholdv1.get(i).get(qstrings.get(0)).add(xx);
+                                             //resholdv1.get(i).get(qstrings.get(2)).add(it);
                                                 results.put(qstrings.get(2), it);
                                                 results.put(qstrings.get(0), xx);
                                             }
-                                            //System.out.println(xx + "---------->" + it);
-                                            
+                                            System.out.println(xx + "---------->" + it);
+                                            hash.put(qstrings.get(2), it);
+                                            hash.put(qstrings.get(0), xx);
                                             //results.put(qstrings.get(0), xx);
 
                                         }
@@ -767,15 +786,13 @@ class QueryV4 {
 
 
                     } else if (!hash.containsKey(qstrings.get(0))) {
-                        
                         System.out.println("Subject is missing; everything else is available");
-
+                        resholdv1.get(i).put(qstrings.get(0), new ArrayList<String>());
                         String pre[] = qstrings.get(1).split(":");
-                        hash.put(qstrings.get(0), "true");
 
                         String cql = "SELECT subject" + "," + pre[1] + " FROM " + db + ";";
 
-                        //System.out.println(cql);
+                        System.out.println(cql);
 
                         ResultSet result = session.execute(cql);
 
@@ -784,7 +801,7 @@ class QueryV4 {
                             if (row.isNull(pre[1])) {
                                 continue;
                             } else {
-                                ////System.out.println("Hello");
+                                //System.out.println("Hello");
                                 String ysplit[];
                                 String xx = row.getString("subject");
                                 String y = row.getString(pre[1]);
@@ -799,28 +816,33 @@ class QueryV4 {
                                 {
                                     tx=qstrings.get(2);
                                 }
-                                
+                                System.out.println(qstrings.get(2)+"<----------->"+tx);
                                 if (y.contains(tx)) {
-                                    
+                                    System.out.println("Y"+y+"---And---"+tx);
+                                    for (int lis = 0; lis < ysplit.length; lis++) {
+                                        if (!ysplit[lis].contains("null") && ysplit[lis].contains("|")) {
+                                            ysplit[lis] = ysplit[lis].substring(0, ysplit[lis].length() - 1);
+                                            System.out.println("FISHY-->" + ysplit[lis]);
+                                        }
+                                    }
                                     ArrayList<String> ysplitlist = new ArrayList<>(Arrays.asList(ysplit));
-                                    // //System.out.println(ysplitlist);
+                                    // System.out.println(ysplitlist);
                                     HashSet set = new HashSet(ysplitlist);
 
                                     Iterator iterator = set.iterator();
                                     while (iterator.hasNext()) {
                                         String it = iterator.next().toString();
                                         if (it.contains("null")) {
-                                            //System.out.println("FOund");
+                                            System.out.println("FOund");
                                             continue;
                                         } else if (it.contains(tx)) {
-                                            
-                                            System.out.println("Comparing "+it+ "with Contains"+tx);
+                                            // System.out.println(xx + "---------->"+tx);
 
-                                            reshold.get(i).add(xx);
+                                            resholdv1.get(i).get(qstrings.get(0)).add(xx);
                                             results.put(qstrings.get(0), xx);
                                         }
-                                        //System.out.println(xx + "---------->" + it);
-                                        
+                                       
+                                        hash.put(qstrings.get(0), xx);
                                         //results.put(qstrings.get(0), xx);
 
                                     }
@@ -837,31 +859,32 @@ class QueryV4 {
 
 
 
-                            ////System.out.println(x+"   "+y);
+                            //System.out.println(x+"   "+y);
                         }
 
-                        ////System.out.println(results);
+                        //System.out.println(results);
 
                     } else {
                         /*if Subject is available in HashMap as a result of previous query*/
-                        //System.out.println("Subject Available (Previous Query) Object missing");
-                        //System.out.println("Finally");
-                        hash.put(qstrings.get(0), "true");
-                        hash.put(qstrings.get(0), "true");
+                        System.out.println("Subject Available (Previous Query) Object missing");
+                        System.out.println("Finally");
+                        
                         String pre[] = qstrings.get(1).split(":");
                         //List<String> list = (List<String>) hash.get(qstrings.get(0));
                         if (!qstrings.get(2).contains("?")) {
                             /*If there are no variables in this Line*/
+                            resholdv1.get(i).put(qstrings.get(0), new ArrayList<String>());
                             int lastfound = findTheLastOccurence(qstrings.get(0));
+                            ArrayList<String> L1=resholdv1.get(lastfound).get(qstrings.get(0));
                             System.out.println("Lastfound--" + lastfound);
-                            for (String c : reshold.get(lastfound)) {
+                            for (String c : L1) {
                                 //String conc=c;
                                 String cql = null;
                                 boolean flag = false;
-                                //System.out.println("No variables found. Everything is available");
-                                ////System.out.println(c);
+                                System.out.println("No variables found. Everything is available");
+                                //System.out.println(c);
                                 if (c.startsWith(" ")) {
-                                    //System.out.println("Replaced Space!");
+                                    System.out.println("Replaced Space!");
                                     flag = true;
                                     c = c.replaceFirst(" ", "");
                                     //cql = "SELECT subject" + "," + pre[1] + " FROM " + db + " WHERE subject=' " + c + "';";
@@ -871,7 +894,7 @@ class QueryV4 {
 
 
 
-                                //System.out.println(cql);
+                                System.out.println(cql);
                                 ResultSet result = session.execute(cql);
                                 if (result.isExhausted()) {
                                     continue;
@@ -883,7 +906,6 @@ class QueryV4 {
                                             String ysplit[];
                                             String xx = row.getString("subject");
                                             String y = row.getString(pre[1]);
-                                            
                                             y = y.replace("|", "*");
 
                                             ysplit = y.split("\\*");
@@ -896,28 +918,29 @@ class QueryV4 {
                                                 tx = qstrings.get(2).replace("\"", "");
                                             }
                                             if (y.contains(tx)) {
-                                                //System.out.println("Yes it contains---------------------");
+                                                System.out.println("Yes it contains---------------------");
                                                 for (int lis = 0; lis < ysplit.length; lis++) {
                                                     if (!ysplit[lis].contains("null") && ysplit[lis].contains("|")) {
                                                         ysplit[lis] = ysplit[lis].substring(0, ysplit[lis].length() - 1);
                                                     }
                                                 }
                                                 ArrayList<String> ysplitlist = new ArrayList<>(Arrays.asList(ysplit));
-                                                // //System.out.println(ysplitlist);
+                                                // System.out.println(ysplitlist);
                                                 HashSet set = new HashSet(ysplitlist);
 
                                                 Iterator iterator = set.iterator();
                                                 while (iterator.hasNext()) {
                                                     String it = iterator.next().toString();
-                                                    //System.out.println("What's going-->" + it);
+                                                    System.out.println("What's going-->" + it);
                                                     if (it.contains("null")) {
-                                                        //System.out.println("FOund");
+                                                        System.out.println("FOund");
                                                         continue;
                                                     } else if (it.contains(tx)) {
-                                                        //System.out.println(xx + "---------->" + it);
+                                                        System.out.println(xx + "---------->" + it);
                                                         //hash.put(qstrings.get(0), conc);
-                                                        reshold.get(i).add(xx);
-                                                        
+                                                        resholdv1.get(i).get(qstrings.get(0)).add(xx);
+                                                        hash.put(qstrings.get(0), it);
+                                                        hash.put(qstrings.get(0), xx);
 
                                                         results.put(qstrings.get(0), xx);
                                                     }
@@ -927,9 +950,9 @@ class QueryV4 {
                                             } else {
                                                 continue;
                                             }
-                                            ////System.out.println("Hy");
+                                            //System.out.println("Hy");
 
-                                            ////System.out.println(xx+"------>"+y);
+                                            //System.out.println(xx+"------>"+y);
                                         }
                                     }
 
@@ -937,21 +960,23 @@ class QueryV4 {
                             }
 
                         } else {
+                            resholdv1.get(i).put(qstrings.get(0), new ArrayList<String>());
+                            resholdv1.get(i).put(qstrings.get(2), new ArrayList<String>());
                             int lastfound = findTheLastOccurence(qstrings.get(0));
-                            //System.out.println(" Right!" + lastfound);
-                            //System.out.println("Curr Index:" + i);
+                            ArrayList<String> L1=resholdv1.get(lastfound).get(qstrings.get(0));
+                            System.out.println(" Right!" + lastfound);
+                            System.out.println("Curr Index:" + i);
 
-                            for (String c : reshold.get(lastfound)) {
+                            for (String c : L1) {
                                 /*if Subject is available as a result of previous query, but object is missing*/
                                 // String conc=c;
                                 boolean flag = false;
-                                //System.out.println("Contains a variable with Subject taken from previous query");
-                                hash.put(qstrings.get(2), "true");
-                                 hash.put(qstrings.get(2), "true");
+                                System.out.println("Contains a variable with Subject taken from previous query");
+
                                 String cql = null;
                                 if (c.startsWith(" ")) {
                                     flag = true;
-                                    //System.out.println("Replaced Space!");
+                                    System.out.println("Replaced Space!");
                                     c = c.replaceFirst(" ", "");
                                     //cql = "SELECT subject" + "," + pre[1] + " FROM " + db + " WHERE subject=' " + c + "';";
                                 }
@@ -959,7 +984,7 @@ class QueryV4 {
                                 cql = "SELECT subject" + "," + pre[1] + " FROM " + db + " WHERE subject='" + c + "';";
 
 
-                                //System.out.println(cql);
+                                System.out.println(cql);
                                 ResultSet result = session.execute(cql);
                                 if (result.isExhausted()) {
                                     continue;
@@ -971,7 +996,6 @@ class QueryV4 {
                                             String ysplit[];
                                             String xx = row.getString("subject");
                                             String y = row.getString(pre[1]);
-                                            
                                             y = y.replace("|", "*");
 
                                             ysplit = y.split("\\*");
@@ -984,27 +1008,27 @@ class QueryV4 {
                                                 }
                                             }
                                             ArrayList<String> ysplitlist = new ArrayList<>(Arrays.asList(ysplit));
-                                            //System.out.println(ysplitlist);
+                                            System.out.println(ysplitlist);
                                             HashSet set = new HashSet(ysplitlist);
 
                                             Iterator iterator = set.iterator();
                                             while (iterator.hasNext()) {
                                                 String it = iterator.next().toString();
                                                 if (it.contains("null")) {
-                                                    //System.out.println("FOund");
+                                                    System.out.println("FOund");
                                                     continue;
                                                 } else {
                                                     if (it.equals("")) {
                                                         continue;
                                                     } else {
-                                                        //System.out.println("Correct");
-                                                        //System.out.println(xx + "---------->" + it);
+                                                        System.out.println("Correct");
+                                                        System.out.println(xx + "---------->" + it);
                                                         //hash.put(qstrings.get(2), conc);
-                                                        
+                                                        hash.put(qstrings.get(2), it);
 
-                                                        reshold.get(i).add(it);
-                                                        reshold.get(i).add(xx);
-                                                        
+                                                        resholdv1.get(i).get(qstrings.get(0)).add(xx);
+                                                        resholdv1.get(i).get(qstrings.get(2)).add(it);
+                                                        hash.put(qstrings.get(2), xx);
 
                                                         results.put(qstrings.get(2), it);
                                                         results.put(qstrings.get(0), xx);
@@ -1015,9 +1039,9 @@ class QueryV4 {
                                             }
 
 
-                                            ////System.out.println("Hy");
+                                            //System.out.println("Hy");
 
-                                            ////System.out.println(xx+"------>"+y);
+                                            //System.out.println(xx+"------>"+y);
                                         }
                                     }
 
@@ -1034,11 +1058,13 @@ class QueryV4 {
                 {
                     System.out.println("Cases where \"http:....\" rdfs:x ?Y and Obj is to be taken from previous query");
                     String subject="";
+                    resholdv1.get(i).put(qstrings.get(2), new ArrayList<String>());
                     if(qstrings.get(0).startsWith("\""))
                     {
                      subject=qstrings.get(0).replace("\"","");
                     }
                     int lastfound=findTheLastOccurence(qstrings.get(2));
+                    ArrayList<String> L1=resholdv1.get(lastfound).get(qstrings.get(2));
                     String pre[] = qstrings.get(1).split(":");
                     String cql="SELECT subject" + "," + pre[1] + " FROM " + db + " WHERE subject='" + subject + "';";
                     ResultSet result = session.execute(cql);
@@ -1060,27 +1086,27 @@ class QueryV4 {
                                 }
                             }
                             ArrayList<String> ysplitlist = new ArrayList<>(Arrays.asList(ysplit));
-                            //System.out.println(ysplitlist);
+                            System.out.println(ysplitlist);
                             HashSet set = new HashSet(ysplitlist);
 
                             Iterator iterator = set.iterator();
                             while (iterator.hasNext()) {
                                 String it = iterator.next().toString();
                                 if (it.contains("null")) {
-                                    //System.out.println("FOund");
+                                    System.out.println("FOund");
                                     continue;
                                 } else {
                                     if (it.equals("")) {
-                                        //System.out.println("Got it");
+                                        System.out.println("Got it");
                                         continue;
                                     } else
                                     {
-                                        for(String c:reshold.get(lastfound))
+                                        for(String c:L1)
                                         {
                                             if(c.contains(it))
                                             {
                                                 System.out.println("Yes it contains--------");
-                                                reshold.get(i).add(it);
+                                                resholdv1.get(i).get(qstrings.get(2)).add(it);
                                                 results.put(qstrings.get(2), it);
                                             }
                                             else
@@ -1105,26 +1131,25 @@ class QueryV4 {
                 }
                 else if (tabs.get("object").equals("true") && tabs.get("subject").equals("false")) {
                     /*if the object is missing*/
-                    //System.out.println("In outermost else");
+                    System.out.println("In outermost else");
                     //Comments added!
 //                    for (int l = 0; l < qstrings.size(); l++) {
 //                        if (qstrings.get(l).contains("\"")) {
 //
 //                            qstrings.set(l, qstrings.get(l).replace("\"", ""));
-//                            // //System.out.println(qstrings.get(l));
+//                            // System.out.println(qstrings.get(l));
 //                        } else if (qstrings.get(l).contains("\n")) {
 //
 //                            qstrings.set(l, qstrings.get(l).replace("\n", ""));
-//                            ////System.out.println(qstrings.get(l));
+//                            //System.out.println(qstrings.get(l));
 //
 //                        } else {
 //                            continue;
 //                        }
 //
 //                    }
-                    // //System.out.println(qstrings.get(0));
-                    hash.put(qstrings.get(2), "true");
-                    hash.put(qstrings.get(2), "true");
+                    // System.out.println(qstrings.get(0));
+                    resholdv1.get(i).put(qstrings.get(2), new ArrayList<String>());
 
                     String pre[] = qstrings.get(1).split(":");
                     String sub = "";
@@ -1133,7 +1158,7 @@ class QueryV4 {
                     }
 
                     String cql = "SELECT subject" + "," + pre[1] + " FROM " + db + " WHERE subject='" + sub + "';";
-                    //System.out.println(cql);
+                    System.out.println(cql);
                     ResultSet result = session.execute(cql);
 
                     for (Row row : result) {
@@ -1154,32 +1179,33 @@ class QueryV4 {
                                 }
                             }
                             ArrayList<String> ysplitlist = new ArrayList<>(Arrays.asList(ysplit));
-                            //System.out.println(ysplitlist);
+                            System.out.println(ysplitlist);
                             HashSet set = new HashSet(ysplitlist);
 
                             Iterator iterator = set.iterator();
                             while (iterator.hasNext()) {
                                 String it = iterator.next().toString();
                                 if (it.contains("null")) {
-                                    //System.out.println("FOund");
+                                    System.out.println("FOund");
                                     continue;
                                 } else {
                                     if (it.equals("")) {
-                                        //System.out.println("Got it");
+                                        System.out.println("Got it");
                                         continue;
                                     } else {
-                                        //System.out.println(xx + "---------->" + it);
+                                        System.out.println(xx + "---------->" + it);
                                         //hash.put(qstrings.get(2), qstrings.get(0));
                                         //String declustered[] = null;
 
 
-                                        reshold.get(i).add(it);
+                                        resholdv1.get(i).get(qstrings.get(2)).add(it);
                                         results.put(qstrings.get(2), it);
 
-                                        ////System.out.println(" Do your due dilligence");
+                                        //System.out.println(" Do your due dilligence");
 
 
-                                        
+                                        hash.put(qstrings.get(2), it);
+                                        hash.put(qstrings.get(2), xx);
 
                                         //hash.put(qstrings.get(2), xx);
                                         //results.put(qstrings.get(2), it);
@@ -1196,17 +1222,17 @@ class QueryV4 {
 
                 } else if (tabs.get("subject").equals("true") && tabs.get("object").equals("true")) {
 //                    //to be done
-//                    //System.out.println("Subject and Object are missing!");
+//                    System.out.println("Subject and Object are missing!");
 //
 //                    for (int l = 0; l < qstrings.size(); l++) {
 //                        if (qstrings.get(l).contains("\"")) {
 //
 //                            qstrings.set(l, qstrings.get(l).replace("\"", ""));
-//                            // //System.out.println(qstrings.get(l));
+//                            // System.out.println(qstrings.get(l));
 //                        } else if (qstrings.get(l).contains("\n")) {
 //
 //                            qstrings.set(l, qstrings.get(l).replace("\n", ""));
-//                            ////System.out.println(qstrings.get(l));
+//                            //System.out.println(qstrings.get(l));
 //
 //                        } else {
 //                            continue;
@@ -1216,7 +1242,7 @@ class QueryV4 {
 //                    String ysplit[];
 //                    String pre[] = qstrings.get(1).split(":");
 //                    String cql = "SELECT subject, " + pre[1] + " from " + db + ";";
-//                    //System.out.println(cql);
+//                    System.out.println(cql);
 //                    ResultSet result = session.execute(cql);
 //                    for (Row row : result) {
 //                        if (row.isNull(pre[1])) {
@@ -1224,7 +1250,7 @@ class QueryV4 {
 //                        } else {
 //                            String xx = row.getString("subject");
 //                            String y = row.getString(pre[1]);
-//                           // //System.out.println("V---->"+y);
+//                           // System.out.println("V---->"+y);
 //                            //y=y.replace(" ","")
 //                            y = y.replace("|", "*");
 //                            ysplit = y.split("\\*");
@@ -1234,18 +1260,18 @@ class QueryV4 {
 //                                }
 //                            }
 //                            ArrayList<String> ysplitlist = new ArrayList<>(Arrays.asList(ysplit));
-//                            //System.out.println(ysplitlist);
+//                            System.out.println(ysplitlist);
 //                            HashSet set = new HashSet(ysplitlist);
 //
 //                            Iterator iterator = set.iterator();
 //                            while (iterator.hasNext()) {
 //                                String it = iterator.next().toString();
 //                                if (it.contains("null")) {
-//                                    //System.out.println("FOund");
+//                                    System.out.println("FOund");
 //                                    continue;
 //                                } else {
 //                                    if (it.equals("")) {
-//                                        //System.out.println("Got it");
+//                                        System.out.println("Got it");
 //                                        continue;
 //                                    } else {
 //                                        if ((param.size() / 3) - 1 != 0) {
@@ -1253,23 +1279,23 @@ class QueryV4 {
 //                                                if (SubQueries.get(i + 1).get(0).equals(qstrings.get(2))) {
 //                                                    reshold.get(i).add(y);
 //                                                    results.put(qstrings.get(2), y);
-//                                                    //System.out.println("Case 1");
+//                                                    System.out.println("Case 1");
 //                                                } else if (SubQueries.get(i + 1).get(0).equals(qstrings.get(0))) {
 //                                                    reshold.get(i).add(xx);
 //                                                    results.put(qstrings.get(0), xx);
-//                                                    //System.out.println("Case 2");
+//                                                    System.out.println("Case 2");
 //                                                } else if (SubQueries.get(i + 1).get(0).equals(qstrings.get(2)) && SubQueries.get(i + 1).get(0).equals(qstrings.get(0))) {
-//                                                    //System.out.println("Case 3");
+//                                                    System.out.println("Case 3");
 //                                                    continue;
 //
 //                                                } else {
-//                                                    //System.out.println("Case 4");
+//                                                    System.out.println("Case 4");
 //                                                    results.put(qstrings.get(0), xx);
 //                                                    results.put(qstrings.get(2), y);
 //                                                }
-//                                                // //System.out.println(" The next query's first varibale is"+SubQueries.get(i+1).get(0));
+//                                                // System.out.println(" The next query's first varibale is"+SubQueries.get(i+1).get(0));
 //                                            } else {
-//                                                //System.out.println("you screwed up!");
+//                                                System.out.println("you screwed up!");
 //                                            }
 //                                        } else {
 //                                            results.put(qstrings.get(0), xx);
@@ -1278,12 +1304,12 @@ class QueryV4 {
 //
 //                                    }
 //                                }
-//                            ////System.out.println(xx);
+//                            //System.out.println(xx);
 //                            //hash.put(qstrings.get(2), y);
 //
 //
 //                            // S//ystem.out.println(i);
-//                            ////System.out.println((param.size()/3)-1);
+//                            //System.out.println((param.size()/3)-1);
 //                           
 //
 //
@@ -1303,12 +1329,12 @@ class QueryV4 {
 
     public MultiMap printResults(Query query) {
 
-        // //System.out.println("In print results~!!");
+        // System.out.println("In print results~!!");
         boolean dis = false;
         boolean filter = false;
         ArrayList<Integer> fil = new ArrayList<>();
         MultiMap tosend = new MultiValueMap();
-        //System.out.println("----------------------------------------------------------------------------------------------------------------------");
+        System.out.println("----------------------------------------------------------------------------------------------------------------------");
         Set<String> keys1 = results.keySet();
         find = (ArrayList<String>) query.getResultVars();
 
@@ -1360,23 +1386,23 @@ class QueryV4 {
                             
                            
          ArrayList<String> ysplitlist = new ArrayList<>(Arrays.asList(ysplit));
-         //System.out.println(ysplitlist);
+         System.out.println(ysplitlist);
          HashSet set = new HashSet(ysplitlist);
 
          Iterator iterator = set.iterator();
          while (iterator.hasNext()) {
          String it = iterator.next().toString();
          if (it.contains("null")) {
-         //System.out.println("FOund");
+         System.out.println("FOund");
          continue;
          } else {
          if (it.equals("")) {
-         //System.out.println("Got it");
+         System.out.println("Got it");
          continue;
          } else {
-         //System.out.println(xx + "---------->" + it);
+         System.out.println(xx + "---------->" + it);
          //hash.put(qstrings.get(2), qstrings.get(0));
-         //System.out.println(me.getKey()+"---->"+it);
+         System.out.println(me.getKey()+"---->"+it);
          results.put(me.getKey(), it);
          }
          }
@@ -1386,7 +1412,7 @@ class QueryV4 {
          }
                     
          }
-         //System.out.println("In");
+         System.out.println("In");
          i++;
                
          }
@@ -1399,9 +1425,9 @@ class QueryV4 {
         if (query.isQueryResultStar()) {
             for (String key : keys1) {
                 key = "?" + key;
-                //System.out.println("Key = " + key);
+                System.out.println("Key = " + key);
 
-                //System.out.println("Values = " + results.get(key));
+                System.out.println("Values = " + results.get(key));
                 tosend.put(key, results.get(key));
 
             }
@@ -1414,10 +1440,10 @@ class QueryV4 {
                 ArrayList<String> distinct = (ArrayList<String>) results.get(c);
                 HashSet set = new HashSet(distinct);
                 Iterator iterator = set.iterator();
-                //System.out.println("Key = " + c);
-                //System.out.println("Values = ");
+                System.out.println("Key = " + c);
+                System.out.println("Values = ");
                 while (iterator.hasNext()) {
-                    //System.out.println(iterator.next().toString());
+                    System.out.println(iterator.next().toString());
                 }
 
 
@@ -1425,17 +1451,10 @@ class QueryV4 {
 
             } else {
                 //ArrayList<String> adl=(ArrayList<String>) results.get(c);
-                if(results.get(c)==null)
-                {
-                    System.out.println("NULL");
-                }
-                else
-                {
                 System.out.println("Size:"+((ArrayList<String>) results.get(c)).size());
                 System.out.println("Key = " + c);
                 System.out.println("Values = " + results.get(c));
                 tosend.put(c, results.get(c));
-                }
             }
 
         }
@@ -1451,13 +1470,13 @@ class QueryV4 {
         for (int i = 0; i < fil.size(); i++) {
 
             int j = fil.get(i) + 1;
-            //System.out.println("starting from here:" + j);
+            System.out.println("starting from here:" + j);
             here:
             while (j < paramv1.size()) {
                 if (!paramv1.get(j).equals(".")) {
                     expr = expr + paramv1.get(j) + " ";
-                    //System.out.println("you should see something" + expr);
-                    //System.out.println(paramv1.get(j));
+                    System.out.println("you should see something" + expr);
+                    System.out.println(paramv1.get(j));
 
                     j++;
                 } else {
@@ -1468,14 +1487,14 @@ class QueryV4 {
             }
 
         }
-        //System.out.println("Expression going to split" + expr);
+        System.out.println("Expression going to split" + expr);
         String ex[] = expr.split(" ");
         for (int k = 0; k < ex.length; k++) {
-            //System.out.println("Putting" + ex[k] + " TRUE");
+            System.out.println("Putting" + ex[k] + " TRUE");
             expression.put(ex[k], "true");
         }
         for (Map.Entry<String, String> me : expression.entrySet()) {
-            //System.out.println(me.getKey() + ":" + me.getValue());
+            System.out.println(me.getKey() + ":" + me.getValue());
         }
 
     }
@@ -1495,18 +1514,18 @@ class QueryV4 {
                 if (!paramv1.get(j).equals(".")) {
                     expr = expr + paramv1.get(j) + " ";
                     //finex=expr;
-                    //System.out.println(paramv1.get(j));
+                    System.out.println(paramv1.get(j));
                     if (filtertabs.get(paramv1.get(j)).equals("true")) {
 
-                        //System.out.println("It's covered:" + paramv1.get(j));
+                        System.out.println("It's covered:" + paramv1.get(j));
                         break here;
                     } else if (paramv1.get(j).equals(st)) {
-                        //System.out.println("Changing" + st + "to TRUE");
+                        System.out.println("Changing" + st + "to TRUE");
                         filtertabs.put(st, "true");
                         // break here;
                     } else if (paramv1.get(j).equals(st1)) {
 
-                        //System.out.println("Changing" + st1 + "to TRUE");
+                        System.out.println("Changing" + st1 + "to TRUE");
                         filtertabs.put(st1, "true");
                         //break here;
                     } else if (j == paramv1.size() - 1) {
@@ -1514,12 +1533,12 @@ class QueryV4 {
                         paramv1.add(".");
                     }
 
-                    //System.out.println("Wacth here" + expr);
+                    System.out.println("Wacth here" + expr);
                     j++;
                 } else {
                     finex = expr;
                     if (filtertabs.get(st).equals("true") || filtertabs.get(st1).equals("true")) {
-                        //System.out.println("WE proceed further from here on!");
+                        System.out.println("WE proceed further from here on!");
                         filterops = true;
                         break out;
                     } else {
@@ -1532,7 +1551,7 @@ class QueryV4 {
             }
 
 
-            // //System.out.println("Printing finex here"+finex);
+            // System.out.println("Printing finex here"+finex);
 
             //stackOps so=new stackOps(expr);
             //so.filterOut();
@@ -1548,13 +1567,13 @@ class QueryV4 {
 
         for (int i = 0; i < fil.size(); i++) {
             exp = exptabs.get(fil.get(i));
-            //System.out.println(exp);
+            System.out.println(exp);
             if (filtertabs.get(exp).equals("true")) {
-                //System.out.println("it's covered");
+                System.out.println("it's covered");
                 continue;
             } else if (exp.contains(st) || exp.contains(st1)) {
                 filtertabs.put(exp, "true");
-                //System.out.println("WE proceed further from here on!");
+                System.out.println("WE proceed further from here on!");
                 filterops = true;
                 break;
 
@@ -1571,24 +1590,24 @@ class QueryV4 {
 //        int x = -1;
 //        int y = -1;
 //        for (int xy = 0; xy < param.size() / 3; xy++) {
-//            //System.out.println(sub+"****"+obj);
-//            //System.out.println(SubQueries.get(xy).get(0)+"-----"+SubQueries.get(xy).get(2));
+//            System.out.println(sub+"****"+obj);
+//            System.out.println(SubQueries.get(xy).get(0)+"-----"+SubQueries.get(xy).get(2));
 //            if (SubQueries.get(xy).get(0).contains("FILTER")) {
 //                continue;
 //            } else if (SubQueries.get(xy).get(0).equals("xox")) {
-//                ////System.out.println("YAYAYAY!!");
+//                //System.out.println("YAYAYAY!!");
 //                continue;
 //
 //            } else if (sub.equals(SubQueries.get(xy).get(0)) && !obj.equals(SubQueries.get(xy).get(2))) {
-//                //System.out.println("watch"+sub+" and "+obj);
-//                //System.out.println("watch"+SubQueries.get(xy).get(0)+" and "+SubQueries.get(xy).get(2));
-//                ////System.out.println(xy);
+//                System.out.println("watch"+sub+" and "+obj);
+//                System.out.println("watch"+SubQueries.get(xy).get(0)+" and "+SubQueries.get(xy).get(2));
+//                //System.out.println(xy);
 //                lastfound[0] = xy;
 //
 //            } else {
 //                //lastfound=xy;
-//                //System.out.println("In else"+sub+" and "+obj);
-//                //System.out.println(SubQueries.get(xy).get(0)+" and "+SubQueries.get(xy).get(2));
+//                System.out.println("In else"+sub+" and "+obj);
+//                System.out.println(SubQueries.get(xy).get(0)+" and "+SubQueries.get(xy).get(2));
 //                lastfound[1] = xy;
 //                break;
 //            }
@@ -1615,10 +1634,10 @@ class QueryV4 {
 //        {
 //            
 //            ArrayList<Integer> list=(ArrayList<Integer>) lastfoundsub.get(sub);
-//            //System.out.println("in sub"+list.size());
+//            System.out.println("in sub"+list.size());
 //            if(list.size()==1)
 //            {
-//                //System.out.println("not?");
+//                System.out.println("not?");
 //            if(lastfoundpred.containsKey(sub))
 //                {
 //                    list=(ArrayList<Integer>) lastfoundpred.get(sub);
@@ -1626,14 +1645,14 @@ class QueryV4 {
 //                    
 //                }
 //            else
-//                    //System.out.println("soemthing went wrong!");
+//                    System.out.println("soemthing went wrong!");
 //            }
 //            else
 //                lastfound=list.get(list.size()-2);
 //        }
 //           else if(lastfoundpred.containsKey(sub))
 //        {
-//            //System.out.println("in pred");
+//            System.out.println("in pred");
 //           ArrayList<Integer> list=(ArrayList<Integer>) lastfoundpred.get(sub);
 //            lastfound=list.get(list.size()-2);
 //        }
@@ -1659,7 +1678,7 @@ class QueryV4 {
    
 }
 
-public class AnimalQueryV4 {
+public class AnimalQueryV5 {
 
     public static void main(String args[]) {
 
@@ -1733,7 +1752,7 @@ public class AnimalQueryV4 {
 
 
         Charset encoding=Charset.defaultCharset();
-        String path="F:\\Cassandra\\LUBM\\Queries\\Query2.txt";
+        String path="F:\\Cassandra\\LUBM\\Queries\\Query7i.txt";
         
         String queryString = null;
         try {
@@ -1744,7 +1763,7 @@ public class AnimalQueryV4 {
         System.out.println(queryString);
         Query query = QueryFactory.create(queryString);
 
-        QueryV4 m = new QueryV4(queryString);
+        QueryV5 m = new QueryV5(queryString);
 
         m.connecti();
         m.init();
@@ -1764,13 +1783,13 @@ public class AnimalQueryV4 {
 
 
 
-        //System.out.println("Elapsed nanoseconds: " + difference);
+        System.out.println("Elapsed nanoseconds: " + difference);
         System.out.println("Elapsed Seconds: " + difference * 0.000000001);
 
 
 
-        // //System.out.println(reshold.get(reshold.size()-1));
-        ////System.out.println(reshold.get(reshold.size()-1).size());
+        // System.out.println(reshold.get(reshold.size()-1));
+        //System.out.println(reshold.get(reshold.size()-1).size());
 
         m.close();
 
