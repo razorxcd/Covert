@@ -36,7 +36,7 @@ class stax
    static public Session session;
     static public Cluster cluster;
     public void connecti() {
-    cluster=Cluster.builder().addContactPoint("localhost").build();
+    cluster=Cluster.builder().addContactPoint("phoenix-sumeru.in").build();
     Metadata metadata = cluster.getMetadata();
     System.out.println("Cassandra connection established");
     System.out.printf("Connected to cluster: %s\n",

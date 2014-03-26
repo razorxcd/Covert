@@ -46,21 +46,21 @@ import vit.mtech.test.TestInsertRio;
  * @author SanjayV
  */
 
-class setup{
+class setupv1{
     public static ArrayList al=new ArrayList();
     public static ArrayList result=new ArrayList();
     public static HashMap<String, Integer> imp=new HashMap();
     public static HashMap<String, String> map=new HashMap();
     public static Session session;
     public static Cluster cluster;
-    public static final String db="LUBMPlain";
-    File uni = new File("F:\\Cassandra\\LUBM\\src\\TinyUniWI.rdf");
+    public static final String db="LUBM3";
+    
     
     
     
     static public String ont="http://www.semanticweb.org/sanjayv/ontologies/2013/11/untitled-ontology-11#";
     
-     public void Parse() throws TTransportException, 
+     public void Parse(File uni) throws TTransportException, 
             UnsupportedEncodingException, InvalidRequestException, NotFoundException,
             UnavailableException, TimedOutException, TException, AuthenticationException,
             AuthorizationException, MalformedURLException, IOException, RDFParseException, RDFHandlerException 
@@ -84,7 +84,7 @@ class setup{
         {
             String p[]=new String[2];
             String pred=sta.getPredicate().toString();
-           // System.out.println(pred);
+            //System.out.println(pred);
             if(!pred.contains("#"))
             {
                  URI uri = URI.create(pred);
@@ -121,7 +121,6 @@ class setup{
 }
 public void connecti() {
     cluster=Cluster.builder().addContactPoint("localhost").build();
-   // cluster.
     Metadata metadata = cluster.getMetadata();
     System.out.println("Cassandra connection established");
     System.out.printf("Connected to cluster: %s\n",
@@ -139,7 +138,7 @@ public void connecti() {
     {
          session.execute("USE rdf;");
          //session.execute("tracing on;");
-         session.execute("CREATE TABLE "+db+"( subject text, PRIMARY KEY(subject));");
+        // session.execute("CREATE TABLE "+db+"( subject text, PRIMARY KEY(subject));");
          //session.execute("TRUNCATE BSBM1M;");
     }
     public void schema()
@@ -150,7 +149,7 @@ public void connecti() {
         for(int i=0;i<result.size();i++)
         {
          System.out.println("Adding Column: "+ result.get(i) + " " );
-         session.execute("ALTER TABLE "+db+" ADD "+result.get(i)+" text;");
+        // session.execute("ALTER TABLE "+db+" ADD "+result.get(i)+" text;");
          map.put(result.get(i).toString(), "false");
         }
         
@@ -161,11 +160,11 @@ public void connecti() {
         for(int i=0;i<result.size();i++)
         {
         System.out.println("Creating Index on: "+ result.get(i) + " " );
-        session.execute("CREATE INDEX ON "+db+" ("+result.get(i)+");");
+       // session.execute("CREATE INDEX ON "+db+" ("+result.get(i)+");");
         }
         
     }
-    public void populateSchema(TestInsertRio rio)
+    public void populateSchema(TestInsertRio rio, File uni)
     {
         try {
             rio.connecti();
@@ -178,7 +177,7 @@ public void connecti() {
             Logger.getLogger(setup.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    public void populateSchema(TestInsert jena)
+    public void populateSchema(TestInsert jena, File uni)
     {
         try {
             jena.connecti();
@@ -204,26 +203,44 @@ public void connecti() {
  
  
  }
-public class NewSchemaV1 {
+public class NewSchemaLUBM {
     
-     public static void main(String args[])
-    {
-        setup i=new setup();
+      public static void main(String args[])
+    
+      {
+          setupv1 i=new setupv1();
         TestInsertRio rio=new TestInsertRio();
         TestInsert jena=new TestInsert();
         i.connecti();
         i.init();
-        try
-        {
-              i.Parse();
-        }
-        catch(Exception e)
-        {
-            System.err.print(e);
-        }
-        i.schema();
-        i.createIndex();
-        i.populateSchema(rio);
+        
+        File temp=new File("F:\\Cassandra\\LUBM\\src\\univ-bench.owl");
+          try {
+              i.Parse(temp);
+          } catch (Exception e) {
+              System.err.print(e);
+          }
+          i.schema();
+          i.createIndex();
+          for (int k = 0; k < 4; k++) {
+              for (int j = 0; j < 20; j++) {
+                 
+                  String univ = "University" + k + "_" + j + ".owl";
+                  System.out.println(univ);
+                   File uni = new File("F:\\Cassandra\\LUBM\\src\\"+univ);
+                  
+                  i.populateSchema(jena, uni);
+
+              }
+
+          }
+        
+        
+        
+       
+       
+        
+        
         i.close();
       
     }

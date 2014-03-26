@@ -51,7 +51,7 @@ public class StoreUsingThrift {
            AuthorizationException, MalformedURLException, IOException, RDFParseException, RDFHandlerException 
     {
          String buffer;
-        TTransport tt=new TFramedTransport(new TSocket("localhost",9160));
+        TTransport tt=new TFramedTransport(new TSocket("phoenix-sumeru.in",9160));
         TProtocol pr = new TBinaryProtocol(tt);
         Cassandra.Client client=new Cassandra.Client(pr);
         tt.open();

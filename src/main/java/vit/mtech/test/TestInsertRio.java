@@ -66,6 +66,7 @@ public class TestInsertRio extends setup {
         //RDFFormat format = Rio.getParserFormatForMIMEType(contentType);
         RDFParser rdfParser = Rio.createParser(format);
         Model model = new LinkedHashModel();
+        
         StatementCollector collector = new StatementCollector(model);
         rdfParser.setRDFHandler(collector);
 
@@ -81,7 +82,7 @@ public class TestInsertRio extends setup {
             obj=obj.replace("\"","");
             obj=obj.replace("'","");
             System.out.println(flag);
-            System.out.println(sub+" "+pred+" "+obj);
+            //System.out.println(sub+" "+pred+" "+obj);
             if (pred.contains("#")) {
                  p = pred.split("#");
             } else {
@@ -105,6 +106,22 @@ public class TestInsertRio extends setup {
                         if(p[y].equals("domain")||p[y].equals("range")||p[y].equals("subPropertyOf"))
                         {
                             continue;
+                        }
+                         if(map.get(p[y])==null)
+                        {
+                        
+                            map.put(p[y], "false");
+                            ResultSet rs=session.execute("SELECT * FROM "+db+";");
+                            ColumnDefinitions cf=rs.getColumnDefinitions();
+                            if(cf.contains(p[y]))
+                            {
+                            }
+                            else
+                            {
+                            System.out.println("Adding in TestInsert: Raised Null Pointer"+p[y]);
+                            session.execute("ALTER TABLE "+db+" ADD "+p[y]+" text;");
+                            }
+                            
                         }
                         if (map.get(p[y]).equals("false")) {
                             //s
@@ -140,4 +157,16 @@ public class TestInsertRio extends setup {
 
         }
     }
-}
+//public static void main(String[] args) throws MalformedURLException, IOException, RDFParseException, RDFHandlerException {
+//        
+//        TestInsertRio rio=new TestInsertRio();
+//        rio.connecti();
+//        rio.init();
+//        File uni = new File("F:\\Cassandra\\LUBM\\src\\MassiveUni.rdf");
+//        String db="LUBM1";
+//        rio.insert(uni, db);
+//        rio.close();
+        
+    }    
+
+

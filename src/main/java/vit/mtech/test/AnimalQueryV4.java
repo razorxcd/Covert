@@ -1,6 +1,52 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+
+/*Alright I'll lay the strategy out for this operation.
+ * -------STRATEGY------------------------------------
+ * 
+ * V4 uses JenaARQ to parse the query string out and lay it out for me so I could divide it properly. 
+ * This is done to eliminate the errors caused by mere whitespaces and /n lines. It does a great job. 
+ * There is a tradeoff though. It increases the elapsed time by 1 second. Can't help it. 
+ * 
+ * 
+ * The idea is to divide the SPARQL meat part into several subqueries of size 3
+ * I've already extracted the meat part into SubQueries AL 
+ * Now, each element in SubQueries AL is an AL itself. And each element in SubQueries AL also represents a line of SPARQL inner query
+ * For each line I use an AL to store the result of executing the query of that particular line. 
+ * This AL is used to fetch the results of the previous lines and substitute in the next line of inner query as input data
+ * I keep track of all such individual lists with AL(AL). 
+ * Briefly, each line of SPARQL meat being an inner query, the query is transformed into CQL and is executed against cassandra. 
+ * The results are fetched and stored in AL(AL). With each AL corresponding to a particular line
+ * Now, the reults stored in AL(AL) is a temporary result, meaning that changes as the looping continues. 
+ * To keep track of final results that are to be printed out, I use a HashMap to store the result of each line. 
+ * The key being the variable part of that query (?x) 
+ * if this variable reappears again in the subsequent queries, the the previous result(ie the value) of that variable (key) is removed from the HashMap
+ * In case of reapperances like above, it is important to find the lastoccurence of that subject/predicate so we could take the correct-
+ * resultset corresponding to that particular line. For this purpose, I call findthelastoccurence() method which gives me the last occurence index-
+ * of that particular varibale so I can take the resultset present in that particular index.
+ * In this way, by the time the loop exits, the HashMap will only contain variables with final results which can be printed out. 
+ * 
+ * ----IDENTIFICATION OF MISSING VARIABLES-----
+ * 
+ * You can decide the type of CQL only after you know what variables are missing in the SPARQL query. 
+ * For eg: If subject is missing in the query, you need to generate a certain type of CQL query. 
+ * If the object is missing, another type and so on. 
+ * The point being, CQL query generation part is not static. 
+ * 
+ * For this purpose, I use another HashMap to keep tabs on what Variables are missing.
+ * and based on that several strategies are formulated which is fairly straightforward. 
+ * 
+ * -----EVALUATING FILTER EXPRESSIONS----------
+ * 
+ * This was the hard part. 
+ * To start off, I extract filter expressions ( if it contains one) from the SPARQL query. 
+ * This is done in the map() method itself. Like I said, in V4, Filter Expressions are stored as a String ie.as one element in the SQ AL
+ * Now, idea is to check the variables in each query as the loop progresses whether any of these variables exist in FILTER expression
+ * For that purpose, i'm calling the method checkForFilterOperands() which takes as paramter the subject and the object of the present query
+ * and if that variable does contain in the expression, that particular expression is returned and control breaks. 
+ * The control is transfered to stackOps() method which is present in another class stack.java which utilises the stack to evaluate-
+ * mathematical expressions. 
+ * THe subsequent operations are also performed in that class itself and the results are stored in the shared result HashMap. 
+ * And the temporary AL of results is also populated. 
+ * To insert the results in correct AL, the indices are sent to that method.
  */
 package vit.mtech.test;
 
@@ -12,7 +58,14 @@ import org.apache.commons.collections4.map.MultiValueMap;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.sparql.syntax.Element;
+import java.io.IOException;
 import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -22,7 +75,7 @@ class QueryV4 {
 
     int flag;
     static String queryString;
-    static final String db = "BSBM50";
+    static final String db = "LUBM3";
     static ArrayList<String> al = new ArrayList<>();
     static ArrayList<String> find = new ArrayList<>();
     static ArrayList<String> param = new ArrayList<>();
@@ -40,16 +93,14 @@ class QueryV4 {
     static Map<String, List<String>> res = new HashMap<>();
     static HashMap<String, String> filtertabs = new HashMap<>();
     static HashMap<Integer, String> exptabs = new HashMap<>();
-    static ArrayList<String> expal=new ArrayList<>();
-   static MultiMap lastfoundsub=new MultiValueMap();
-   static MultiMap lastfoundpred=new MultiValueMap();
-   static HashMap<String, String> subtabs = new HashMap<>();
-   static HashMap<String, String> predtabs = new HashMap<>();
-    
+    static ArrayList<String> expal = new ArrayList<>();
+    static MultiMap lastfoundsub = new MultiValueMap();
+    static MultiMap lastfoundpred = new MultiValueMap();
+    static HashMap<String, Integer> subtabs = new HashMap<>();
+    static HashMap<String, Integer> predtabs = new HashMap<>();
     static HashMap<String, String> expression = new HashMap<>();
     static boolean filter = false;
     static boolean filterops = false;
-   
     String ub = "http://www.lehigh.edu/~zhp2/2004/0401/univ-bench.owl#";
     //String Ontology="http://www.semanticweb.org/sanjayv/ontologies/2013/11/untitled-ontology-11#";
     //String pred="http://www.w3.org/2000/01/rdf-schema#";
@@ -67,7 +118,6 @@ class QueryV4 {
 //    String queryString="select ?name where {\n" +
 //"?person foaf:name ?name .\n" +
 //"}";
-    
     /*String  queryString="select ?s ?o where {\n" +
      "?s ub:teacherOf \"http://www.Department0.University0.edu/Course15\" .\n" +
      "?s ub:undergraduateDegreeFrom ?o .\n" +
@@ -108,151 +158,140 @@ class QueryV4 {
     }
 
     public void close() {
-        cluster.shutdown();
+        cluster.close();
     }
 
     public void map(Query query) {
 
-       
-        
+
+
         Element q = query.getQueryPattern();
         String qstr = q.toString();
-        
+
         qstr = qstr.replace("\n", " n");
 
         //qstr = StringUtils.replaceEach(qstr, new String[]{"{", "}"}, new String[]{"", ""});
-        qstr=qstr.replace("{", "");
-        qstr=qstr.replace("}","");
+        qstr = qstr.replace("{", "");
+        qstr = qstr.replace("}", "");
         qstr = qstr.trim().replaceAll("\\s+", " ");
         //qstr=qstr.replace("n", " .n");
         String split[] = qstr.split(" ");
-        for (String c : split) 
-        {
-            
-            
-            if(c.startsWith("<")&&c.endsWith(">"))
-            {
-                       // c=StringUtils.replaceEach(c, new String[]{"<", ">"}, new String[]{"", ""});
-                c=c.replace("<", "");
-                c=c.replace(">", "");
-                        
+        for (String c : split) {
+
+
+            if (c.startsWith("<") && c.endsWith(">")) {
+                // c=StringUtils.replaceEach(c, new String[]{"<", ">"}, new String[]{"", ""});
+                c = c.replace("<", "");
+                c = c.replace(">", "");
+
             }
             paramv1.add(c);
             if (c.equals(".") || c.equals("n")) {
                 continue;
             } else {
-                
-                   
-               
-                    param.add(c);
+
+
+
+                param.add(c);
             }
         }
-        
-        
+
+
         /*
          * Add "false" to every parameter in the query so as to check out during Filter search! 
          * It is used in the tailend part. 
          */
-         for (int i = 0; i < param.size(); i++) {
+        for (int i = 0; i < param.size(); i++) {
 
             //System.out.println("Putting flase for:" + param.get(i));
             //filtertabs.put(param.get(i), "false");
             expression.put(param.get(i), "false");
-           // exptabs.put(param.get(i), "false");
+            // exptabs.put(param.get(i), "false");
         }
-         
-         /*extract subqueries of size 3 from Param ArrayList
-          * While doing that accumulate Filter expression in a string (as in [FILTER ( x < y ), x, x]) and 
-          * add it to SubQueries AL as a whole string rather than character by character
-          * so we could avoid cases in which Filter line is not multiple of 3 in which case
-          * the SubQuery AL might get garbled. 
-          * 
-          * Also the functionility of exMapFill() is merged into this method. 
-          * We no longer need it. 
-          * Filter check is also done here itself! 
-          */
-         for (int i = 0; i < param.size() / 3; i++) {
+
+        /*extract subqueries of size 3 from Param ArrayList
+         * While doing that accumulate Filter expression in a string (as in [FILTER ( x < y ), x, x]) and 
+         * add it to SubQueries AL as a whole string rather than character by character
+         * so we could avoid cases in which Filter line is not multiple of 3 in which case
+         * the SubQuery AL might get garbled. 
+         * 
+         * Also the functionility of exMapFill() is merged into this method. 
+         * We no longer need it. 
+         * Filter check is also done here itself! 
+         */
+        for (int i = 0; i < param.size() / 3; i++) {
 
             SubQueries.add(new ArrayList<String>());
         }
         int j = 0;
         for (int i = 0; i < paramv1.size() / 3; i++) {
             int x = 0;
-            String exp="";
-            
-            
+            String exp = "";
+
+
             here:
             while (j < paramv1.size()) {
-                
-                if(paramv1.get(j).equals(".")||paramv1.get(j).equals("n"))
-                {
+
+                if (paramv1.get(j).equals(".") || paramv1.get(j).equals("n")) {
                     //System.out.println("It does");
                     j++;
-                continue here;
+                    continue here;
                 }
-                
+
                 if (x != 3) {
 //                    if(param.get(j).equals("n"))
 //                {
 //                    //System.out.println("It is going");
 //                    continue here;
 //                }
-                    if(expression.get(paramv1.get(j)).equals("true"))
-                    {
+                    if (expression.get(paramv1.get(j)).equals("true")) {
                         //System.out.println("caught here");
-                         SubQueries.get(i).add("xox");
-                         j++;
-                         x++;
-                         continue here;
-                    }
-                       
-                   else if(paramv1.get(j).contains("FILTER"))
-                    {
-                        filter=true;
+                        SubQueries.get(i).add("xox");
+                        j++;
+                        x++;
+                        continue here;
+                    } else if (paramv1.get(j).contains("FILTER")) {
+                        filter = true;
                         fil.add(i);
-                        //System.out.println("Filter is there at"+j);
-                        int y=j+1;
-                       
-                        exp="FILTER"+" ";
-                        while(!paramv1.get(y).equals("n"))
-                        {
+                        //System.out.println("Filter is there at" + j);
+                        int y = j + 1;
+
+                        exp = "FILTER" + " ";
+                        while (!paramv1.get(y).equals("n")) {
                             //System.out.println("going in here~");
-                            
-                            exp=exp+paramv1.get(y)+" ";
-                            //System.out.println("Here-->"+exp);
-                            //System.out.println("putting"+paramv1.get(y)+"to true");
+
+                            exp = exp + paramv1.get(y) + " ";
+                            //System.out.println("Here-->" + exp);
+                            //System.out.println("putting" + paramv1.get(y) + "to true");
                             expression.put(paramv1.get(y), "true");
-                            
+
                             y++;
                         }
                         expal.add(exp);
                         exptabs.put(i, exp);
                         filtertabs.put(exp, "false");
                         SubQueries.get(i).add(exp);
-                       j++;
-                       x++;
+                        j++;
+                        x++;
                         continue here;
+                    } else {
+                        //System.out.println("hey");
+                        SubQueries.get(i).add(paramv1.get(j));
+                        j++;
+                        x++;
                     }
-                    else
-                   {
-                       //System.out.println("hey");
-                    SubQueries.get(i).add(paramv1.get(j));
-                    j++;
-                    x++;
-                   }
                 } else {
                     break here;
                 }
             }
         }
-        
+
         // This operation is used to keep tabs on all subjects and objects for ..umm reasons unknown. Not yet.
-        for(int x=0;x<SubQueries.size();x++)
-        {
-            subtabs.put(SubQueries.get(x).get(0), "true");
-            //System.out.println(SubQueries.get(x).get(0)+"-->"+SubQueries.get(x).get(2));
-            predtabs.put(SubQueries.get(x).get(2), "true");
-            
+        for (int x = 0; x < SubQueries.size(); x++) {
+            subtabs.put(SubQueries.get(x).get(0), x);
+            //System.out.println(SubQueries.get(x).get(0) + "-->" + SubQueries.get(x).get(2));
+            predtabs.put(SubQueries.get(x).get(2), x);
+
         }
         //System.out.println(SubQueries);
 
@@ -262,57 +301,6 @@ class QueryV4 {
 
 
     }
-    
-    
-    /*Alright I'll lay the strategy out for this operation.
-         * -------STRATEGY------------------------------------
-         * 
-         * V4 uses JenaARQ to parse the query string out and lay it out for me so I could divide it properly. 
-         * This is done to eliminate the errors caused by mere whitespaces and /n lines. It does a great job. 
-         * There is a tradeoff though. It increases the elapsed time by 1 second. Can't help it. 
-         * 
-         * 
-         * The idea is to divide the SPARQL meat part into several subqueries of size 3
-         * I've already extracted the meat part into SubQueries AL 
-         * Now, each element in SubQueries AL is an AL itself. And each element in SubQueries AL also represents a line of SPARQL inner query
-         * For each line I use an AL to store the result of executing the query of that particular line. 
-         * This AL is used to fetch the results of the previous lines and substitute in the next line of inner query as input data
-         * I keep track of all such individual lists with AL(AL). 
-         * Briefly, each line of SPARQL meat being an inner query, the query is transformed into CQL and is executed against cassandra. 
-         * The results are fetched and stored in AL(AL). With each AL corresponding to a particular line
-         * Now, the reults stored in AL(AL) is a temporary result, meaning that changes as the looping continues. 
-         * To keep track of final results that are to be printed out, I use a HashMap to store the result of each line. 
-         * The key being the variable part of that query (?x) 
-         * if this variable reappears again in the subsequent queries, the the previous result(ie the value) of that variable (key) is removed from the HashMap
-         * In case of reapperances like above, it is important to find the lastoccurence of that subject/predicate so we could take the correct-
-         * resultset corresponding to that particular line. For this purpose, I call findthelastoccurence() method which gives me the last occurence index-
-         * of that particular varibale so I can take the resultset present in that particular index.
-         * In this way, by the time the loop exits, the HashMap will only contain variables with final results which can be printed out. 
-         * 
-         * ----IDENTIFICATION OF MISSING VARIABLES-----
-         * 
-         * You can decide the type of CQL only after you know what variables are missing in the SPARQL query. 
-         * For eg: If subject is missing in the query, you need to generate a certain type of CQL query. 
-         * If the object is missing, another type and so on. 
-         * The point being, CQL query generation part is not static. 
-         * 
-         * For this purpose, I use another HashMap to keep tabs on what Variables are missing.
-         * and based on that several strategies are formulated which is fairly straightforward. 
-         * 
-         * -----EVALUATING FILTER EXPRESSIONS----------
-         * 
-         * This was the hard part. 
-         * To start off, I extract filter expressions ( if it contains one) from the SPARQL query. 
-         * This is done in the map() method itself. Like I said, in V4, Filter Expressions are stored as a String ie.as one element in the SQ AL
-         * Now, idea is to check the variables in each query as the loop progresses whether any of these variables exist in FILTER expression
-         * For that purpose, i'm calling the method checkForFilterOperands() which takes as paramter the subject and the object of the present query
-         * and if that variable does contain in the expression, that particular expression is returned and control breaks. 
-         * The control is transfered to stackOps() method which is present in another class stack.java which utilises the stack to evaluate-
-         * mathematical expressions. 
-         * THe subsequent operations are also performed in that class itself and the results are stored in the shared result HashMap. 
-         * And the temporary AL of results is also populated. 
-         * To insert the results in correct AL, the indices are sent to that method.
-         */
 
     public void executeSubQueries(Query query) {
         //int tabs=0;
@@ -323,9 +311,9 @@ class QueryV4 {
 //        } else {
 //            // //System.out.println("I am not even calling exmap");
 //        }
-        ArrayList<String> resultvars=(ArrayList<String>) query.getResultVars();
-        
-        
+        ArrayList<String> resultvars = (ArrayList<String>) query.getResultVars();
+
+
         outer:
         for (int i = 0; i < param.size() / 3; i++) {
             int j = 0;
@@ -344,7 +332,7 @@ class QueryV4 {
                 if (SubQueries.get(i).get(j).contains("FILTER")) {
                     break here;
                 } else if (SubQueries.get(i).get(j).equals("xox")) {
-                   
+
                     break here;
                 }
                 //tabs++;
@@ -357,32 +345,33 @@ class QueryV4 {
                 //else
                 //{
                 String qsplit[];
-                if(qstrings.get(1).contains("#"))
-                {
-                    qsplit=qstrings.get(1).split("#");
-                    String mod="x:"+qsplit[1];
+                if (qstrings.get(1).contains("#")) {
+                    qsplit = qstrings.get(1).split("#");
+                    String mod = "x:" + qsplit[1];
                     qstrings.set(1, mod);
-                }
-                else
-                {
+                } else {
                     URI uri = URI.create(qstrings.get(1));
                     String path = uri.getPath();
-                ////System.out.println(path.substring(path.lastIndexOf('/') + 1));
-                    String mod="x:"+path.substring(path.lastIndexOf('/') + 1);
-                   qstrings.set(1,mod);
+                    ////System.out.println(path.substring(path.lastIndexOf('/') + 1));
+                    String mod = "x:" + path.substring(path.lastIndexOf('/') + 1);
+                    qstrings.set(1, mod);
                 }
-                    
+
 
                 //System.out.println("Look at here!" + qstrings);
                 lastfoundsub.put(qstrings.get(0), i);
                 lastfoundpred.put(qstrings.get(2), i);
-                
+
 
                 if (i != 0) {
                     if (results.containsKey(qstrings.get(0))) {
                         //System.out.println("REMOVING VALUE FOR KEY:" + qstrings.get(0));
                         results.remove(qstrings.get(0));
                         //results.put(qstrings.get(0), "N");
+                    }
+                    if(results.containsKey(qstrings.get(2)))
+                    {
+                        results.remove(qstrings.get(2));
                     }
                 }
 
@@ -405,14 +394,14 @@ class QueryV4 {
 //                    }
 
                     if (filterops == true) {
-                        int lastfound = findTheLastOccurence(qstrings.get(0), qstrings.get(2));
+                        int lastfound = findTheLastOccurence(qstrings.get(0));
                         //System.out.println("LastFound ==" + lastfound);
                         String qstring[] = qstrings.get(1).split(":");
                         //System.out.println("Expression to be fed to FILTEROPS" + expr);
                         stackOps so = new stackOps(expr);
                         so.connecti();
                         so.init();
-                        //System.out.println("Going into So.Filterout--->"+lastfound+" "+i+" "+ qstring[1]+ qstrings.get(2)+ qstrings.get(0));
+                        //System.out.println("Going into So.Filterout--->" + lastfound + " " + i + " " + qstring[1] + qstrings.get(2) + qstrings.get(0));
                         so.filterOut(lastfound, i, qstring[1], qstrings.get(2), qstrings.get(0));
 
                         //System.out.println("Filterops Started");
@@ -603,29 +592,25 @@ class QueryV4 {
 //                                                hash.put(qstrings.get(0), xx);
 //                                            }
                                             //For this reason!
-                                            if(subtabs.containsKey(qstrings.get(0))&&!subtabs.containsKey(qstrings.get(2)))
-                                            {
-                                                if(resultvars.contains(qstrings.get(2).replace("?", "")))
+                                            if (subtabs.containsKey(qstrings.get(0)) && !subtabs.containsKey(qstrings.get(2))) {
+                                                if (resultvars.contains(qstrings.get(2).replace("?", ""))) {
                                                     results.put(qstrings.get(2), it);
-                                                
+                                                }
+
                                                 reshold.get(i).add(xx);
                                                 results.put(qstrings.get(0), xx);
                                                 hash.put(qstrings.get(0), xx);
-                                                System.out.println("Case 1");
-                                            }
-                                            else if(subtabs.containsKey(qstrings.get(2)))
-                                            {
-                                                if(resultvars.contains(qstrings.get(0).replace("?", "")))
+                                                //System.out.println("Case 1");
+                                            } else if (subtabs.containsKey(qstrings.get(2))) {
+                                                if (resultvars.contains(qstrings.get(0).replace("?", ""))) {
                                                     results.put(qstrings.get(0), xx);
+                                                }
                                                 reshold.get(i).add(it);
-                                                System.out.println("putting "+it+" in "+qstrings.get(2));
+                                                //System.out.println("putting " + it + " in " + qstrings.get(2));
                                                 results.put(qstrings.get(2), it);
                                                 hash.put(qstrings.get(2), it);
-                                                System.out.println("Case 2");
-                                            }
-                                            else if(!subtabs.containsKey(qstrings.get(0))&&predtabs.containsKey(qstrings.get(2)))
-                                            {
-                                                
+                                                //System.out.println("Case 2");
+                                            } else if (!subtabs.containsKey(qstrings.get(0)) && predtabs.containsKey(qstrings.get(2))) {
                                             }
 
                                         }
@@ -644,6 +629,71 @@ class QueryV4 {
 
                                 }
                             }
+
+                        }
+
+                    } else if (tabs.get("object").equals("true") && hash.containsKey(qstrings.get(0)) && hash.containsKey(qstrings.get(2))) {
+                        System.out.println("Case where both S and O must be taken from previous queries");
+                        String ysplit[];
+                        String pre[] = qstrings.get(1).split(":");
+                        String cql = "SELECT subject, " + pre[1] + " from " + db + ";";
+                        //System.out.println(cql);
+                        ResultSet result = session.execute(cql);
+                        int lastfound = findTheLastOccurence(qstrings.get(0));
+                        int lastfound1 = findTheLastOccurence(qstrings.get(2));
+                        //System.out.println("Last Found Subject: " + lastfound + " and Last Found Pred " + lastfound1);
+                        for (Row row : result) {
+                            if (row.isNull(pre[1])) {
+                                continue;
+                            } else {
+                                String xx = row.getString("subject");
+                                String y = row.getString(pre[1]);
+                                //System.out.println(xx + "---->" + y);
+                                y = y.replace("|", "*");
+                                ysplit = y.split("\\*");
+
+                                ArrayList<String> ysplitlist = new ArrayList<>(Arrays.asList(ysplit));
+                                //System.out.println(ysplitlist);
+                                HashSet set = new HashSet(ysplitlist);
+                                Iterator iterator = set.iterator();
+                                wh:
+                                while (iterator.hasNext()) {
+                                    String it = iterator.next().toString();
+                                    if (it.contains("null")) {
+                                        //System.out.println("FOund");
+                                        continue wh;
+                                    } else {
+                                        //System.out.println("Inseide Else");
+                                        out:  for (String c:reshold.get(lastfound)) {
+                                            //System.out.println("Inside For");
+                                              for (String c1:reshold.get(lastfound1)) {
+                                                //System.out.println("Another For");
+                                                if (c.equals(xx)) {
+                                                    if (it.contains(c1)) {
+                                                        System.out.println(xx + "-----contains---->" + c1);
+                                                        reshold.get(i).add(xx);
+                                                        reshold.get(i).add(it);
+                                                        results.put(qstrings.get(0), xx);
+                                                        results.put(qstrings.get(2), it);
+
+                                                    } else {
+                                                        //System.out.println(it + " doesn't contain " + c1);
+                                                        continue;
+                                                    }
+                                                } else {
+                                                    //System.out.println(" is != " + xx);
+                                                    continue out;
+                                                }
+                                            }
+
+                                        }
+
+                                    }
+
+
+                                }
+                            }
+
 
                         }
 
@@ -727,13 +777,18 @@ class QueryV4 {
                             if (row.isNull(pre[1])) {
                                 continue;
                             } else {
+                                ////System.out.println("Hello");
                                 String ysplit[];
                                 String xx = row.getString("subject");
                                 String y = row.getString(pre[1]);
                                 y = y.replace("|", "*");
                                 ysplit = y.split("\\*");
                                 String yfin = "";
-                                if (y.contains(qstrings.get(2))) {
+                                String tx = "";
+                                if (qstrings.get(2).startsWith("\"")) {
+                                    tx = qstrings.get(2).replace("\"", "");
+                                }
+                                if (y.contains(tx)) {
                                     for (int lis = 0; lis < ysplit.length; lis++) {
                                         if (!ysplit[lis].contains("null") && ysplit[lis].contains("|")) {
                                             ysplit[lis] = ysplit[lis].substring(0, ysplit[lis].length() - 1);
@@ -750,7 +805,7 @@ class QueryV4 {
                                         if (it.contains("null")) {
                                             //System.out.println("FOund");
                                             continue;
-                                        } else if (it.contains(qstrings.get(2))) {
+                                        } else if (it.contains(tx)) {
 
                                             reshold.get(i).add(xx);
                                             results.put(qstrings.get(0), xx);
@@ -783,11 +838,11 @@ class QueryV4 {
                         //System.out.println("Subject Available (Previous Query) Object missing");
                         //System.out.println("Finally");
                         String pre[] = qstrings.get(1).split(":");
-                        List<String> list = (List<String>) hash.get(qstrings.get(0));
+                        //List<String> list = (List<String>) hash.get(qstrings.get(0));
                         if (!qstrings.get(2).contains("?")) {
                             /*If there are no variables in this Line*/
-                            int lastfound = findTheLastOccurence(qstrings.get(0), qstrings.get(2));
-                            //System.out.println("Lastfound--"+lastfound);
+                            int lastfound = findTheLastOccurence(qstrings.get(0));
+                            //System.out.println("Lastfound--" + lastfound);
                             for (String c : reshold.get(lastfound)) {
                                 //String conc=c;
                                 String cql = null;
@@ -824,7 +879,11 @@ class QueryV4 {
 
 
                                             String yfin = "";
-                                            if (y.contains(qstrings.get(2))) {
+                                            String tx = "";
+                                            if (qstrings.get(2).startsWith("\"")) {
+                                                tx = qstrings.get(2).replace("\"", "");
+                                            }
+                                            if (y.contains(tx)) {
                                                 //System.out.println("Yes it contains---------------------");
                                                 for (int lis = 0; lis < ysplit.length; lis++) {
                                                     if (!ysplit[lis].contains("null") && ysplit[lis].contains("|")) {
@@ -842,7 +901,7 @@ class QueryV4 {
                                                     if (it.contains("null")) {
                                                         //System.out.println("FOund");
                                                         continue;
-                                                    } else if (it.contains(qstrings.get(2))) {
+                                                    } else if (it.contains(tx)) {
                                                         //System.out.println(xx + "---------->" + it);
                                                         //hash.put(qstrings.get(0), conc);
                                                         reshold.get(i).add(xx);
@@ -867,9 +926,9 @@ class QueryV4 {
                             }
 
                         } else {
-                            int lastfound = findTheLastOccurence(qstrings.get(0), qstrings.get(2));
-                            //System.out.println(" Right!"+lastfound);
-                            //System.out.println("Curr Index:"+i);
+                            int lastfound = findTheLastOccurence(qstrings.get(0));
+                            //System.out.println(" Right!" + lastfound);
+                            //System.out.println("Curr Index:" + i);
 
                             for (String c : reshold.get(lastfound)) {
                                 /*if Subject is available as a result of previous query, but object is missing*/
@@ -957,7 +1016,81 @@ class QueryV4 {
 
                     }
                     break here;
-                } else if (tabs.get("object").equals("true") && tabs.get("subject").equals("false")) {
+                } 
+                else if(tabs.get("object").equals("true") && tabs.get("subject").equals("false")&&hash.containsKey(qstrings.get(2)))
+                {
+                    System.out.println("Cases where \"http:....\" rdfs:x ?Y and Obj is to be taken from previous query");
+                    String subject="";
+                    if(qstrings.get(0).startsWith("\""))
+                    {
+                     subject=qstrings.get(0).replace("\"","");
+                    }
+                    int lastfound=findTheLastOccurence(qstrings.get(2));
+                    String pre[] = qstrings.get(1).split(":");
+                    String cql="SELECT subject" + "," + pre[1] + " FROM " + db + " WHERE subject='" + subject + "';";
+                    ResultSet result = session.execute(cql);
+                    for(Row row:result)
+                    {
+                        if (row.isNull(pre[1])) {
+                            continue;
+                        } else {
+                            String ysplit[];
+                            //String xx = row.getString("subject");
+                            String y = row.getString(pre[1]);
+                            y = y.replace("|", "*");
+                            //hash.put(qstrings.get(2), y);
+                            ysplit = y.split("\\*");
+                            String yfin = "";
+                            for (int lis = 0; lis < ysplit.length; lis++) {
+                                if (!ysplit[lis].contains("null") && ysplit[lis].contains("|")) {
+                                    ysplit[lis] = ysplit[lis].substring(0, ysplit[lis].length() - 1);
+                                }
+                            }
+                            ArrayList<String> ysplitlist = new ArrayList<>(Arrays.asList(ysplit));
+                            //System.out.println(ysplitlist);
+                            HashSet set = new HashSet(ysplitlist);
+
+                            Iterator iterator = set.iterator();
+                            while (iterator.hasNext()) {
+                                String it = iterator.next().toString();
+                                if (it.contains("null")) {
+                                    //System.out.println("FOund");
+                                    continue;
+                                } else {
+                                    if (it.equals("")) {
+                                        //System.out.println("Got it");
+                                        continue;
+                                    } else
+                                    {
+                                        for(String c:reshold.get(lastfound))
+                                        {
+                                            if(c.contains(it))
+                                            {
+                                                System.out.println("Yes it contains--------");
+                                                reshold.get(i).add(it);
+                                                results.put(qstrings.get(2), it);
+                                            }
+                                            else
+                                                continue;
+                                        }
+                                        
+                                        
+                                        
+                                        
+                                        
+                                    }
+                                    
+                                }
+                                
+                            }
+                        
+                    }
+                    
+                    }
+                    break here;
+                    
+                }
+                else if (tabs.get("object").equals("true") && tabs.get("subject").equals("false")) {
                     /*if the object is missing*/
                     //System.out.println("In outermost else");
                     //Comments added!
@@ -979,8 +1112,12 @@ class QueryV4 {
                     // //System.out.println(qstrings.get(0));
 
                     String pre[] = qstrings.get(1).split(":");
+                    String sub = "";
+                    if (qstrings.get(0).startsWith("\"")) {
+                        sub = qstrings.get(0).replace("\"", "");
+                    }
 
-                    String cql = "SELECT subject" + "," + pre[1] + " FROM " + db + " WHERE subject='" + qstrings.get(0) + "';";
+                    String cql = "SELECT subject" + "," + pre[1] + " FROM " + db + " WHERE subject='" + sub + "';";
                     //System.out.println(cql);
                     ResultSet result = session.execute(cql);
 
@@ -1018,7 +1155,7 @@ class QueryV4 {
                                     } else {
                                         //System.out.println(xx + "---------->" + it);
                                         //hash.put(qstrings.get(2), qstrings.get(0));
-                                        String declustered[] = null;
+                                        //String declustered[] = null;
 
 
                                         reshold.get(i).add(it);
@@ -1151,102 +1288,114 @@ class QueryV4 {
     }
 
     public MultiMap printResults(Query query) {
-        
-       // //System.out.println("In print results~!!");
+
+        // //System.out.println("In print results~!!");
         boolean dis = false;
         boolean filter = false;
         ArrayList<Integer> fil = new ArrayList<>();
         MultiMap tosend = new MultiValueMap();
         //System.out.println("----------------------------------------------------------------------------------------------------------------------");
         Set<String> keys1 = results.keySet();
-        find=(ArrayList<String>) query.getResultVars();
-        
-        
+        find = (ArrayList<String>) query.getResultVars();
+
+
         /*
          * Resultset mapping is done here -----------------
          */
-        
-        out: for (Map.Entry<String, String> me : predtabs.entrySet()) {
-            if(!subtabs.containsKey(me.getKey()))
-            {
-                String orphan=me.getKey().replace("?", "");
-                for(String x:expal)
-                {
-                    if(x.contains(orphan))
-                        continue out;
-                }
+        int i=0;
+/*
+         out: for (Map.Entry<String, Integer> me : predtabs.entrySet()) {
+             
+         if(!subtabs.containsKey(me.getKey()))
+         {
+          
+        // String orphan=me.getKey().replace("?", "");
+             String orphan[]=SubQueries.get(me.getValue()).get(1).split("#");
+             
+             System.out.println(orphan[1]);
+             System.out.println(me.getValue());
+         for(String x:expal)
+         {
+         if(x.contains(orphan[1]))
+         continue out;
+         }
                 
-                if(find.contains(me.getKey().replace("?", "")))
-                {
+         if(find.contains(me.getKey().replace("?", "")))
+         {
                     
-                    String lead="?"+find.get(0);
+         String lead="?"+find.get(0);
                     
-                    ArrayList<String> temp=(ArrayList<String>) results.get(lead);
-                    for(String c:temp)
-                    {
-                        String cql="SELECT "+orphan+ " FROM " + db + " WHERE subject='" + c + "';";
-                        ResultSet result=session.execute(cql);
-                        for (Row row : result) {
+         ArrayList<String> temp=(ArrayList<String>) results.get(lead);
+         for(String c:temp)
+         {
+         String cql="SELECT "+orphan[1]+ " FROM " + db + " WHERE subject='" + c + "';";
+             System.out.println(cql);
+         ResultSet result=session.execute(cql);
+         for (Row row : result) {
 
-                        if (row.isNull(orphan)) {
-                            continue;
-                        } else {
-                            results.remove(me.getKey());
-                            String ysplit[];
-                            //String xx = row.getString(me.getKey());
-                            String y = row.getString(orphan);
-                            y = y.replace("|", "*");
-                            //hash.put(qstrings.get(2), y);
-                            ysplit = y.split("\\*");
+         if (row.isNull(orphan[1])) {
+         continue;
+         } else {
+         results.remove(me.getKey());
+         String ysplit[];
+         //String xx = row.getString(me.getKey());
+         String y = row.getString(orphan[1]);
+         y = y.replace("|", "*");
+         //hash.put(qstrings.get(2), y);
+         ysplit = y.split("\\*");
                             
                            
-                            ArrayList<String> ysplitlist = new ArrayList<>(Arrays.asList(ysplit));
-                            //System.out.println(ysplitlist);
-                            HashSet set = new HashSet(ysplitlist);
+         ArrayList<String> ysplitlist = new ArrayList<>(Arrays.asList(ysplit));
+         //System.out.println(ysplitlist);
+         HashSet set = new HashSet(ysplitlist);
 
-                            Iterator iterator = set.iterator();
-                            while (iterator.hasNext()) {
-                                String it = iterator.next().toString();
-                                if (it.contains("null")) {
-                                    //System.out.println("FOund");
-                                    continue;
-                                } else {
-                                    if (it.equals("")) {
-                                        //System.out.println("Got it");
-                                        continue;
-                                    } else {
-                                        //System.out.println(xx + "---------->" + it);
-                                        //hash.put(qstrings.get(2), qstrings.get(0));
-                                        System.out.println(me.getKey()+"---->"+it);
-                                        results.put(me.getKey(), it);
-                                    }
-                                }
-                            }
-                        }
-                        }
-                    }
+         Iterator iterator = set.iterator();
+         while (iterator.hasNext()) {
+         String it = iterator.next().toString();
+         if (it.contains("null")) {
+         //System.out.println("FOund");
+         continue;
+         } else {
+         if (it.equals("")) {
+         //System.out.println("Got it");
+         continue;
+         } else {
+         //System.out.println(xx + "---------->" + it);
+         //hash.put(qstrings.get(2), qstrings.get(0));
+         //System.out.println(me.getKey()+"---->"+it);
+         results.put(me.getKey(), it);
+         }
+         }
+         }
+         }
+         }
+         }
                     
-                }
+         }
+         //System.out.println("In");
+         i++;
                
+         }
+         else
+         {
+             i++;
+         continue;
+         }
+         }*/
+        if (query.isQueryResultStar()) {
+            for (String key : keys1) {
+                key = "?" + key;
+                //System.out.println("Key = " + key);
+
+                //System.out.println("Values = " + results.get(key));
+                tosend.put(key, results.get(key));
+
             }
-             else
-                    continue;
         }
-        if(query.isQueryResultStar())
-        {
-             for (String key : keys1) {
-                 key="?"+key;
-                    //System.out.println("Key = " + key);
 
-                    //System.out.println("Values = " + results.get(key));
-                    tosend.put(key, results.get(key));
 
-                }
-        }
-                
-       
         for (String c : find) {
-            c="?"+c;
+            c = "?" + c;
             if (dis) {
                 ArrayList<String> distinct = (ArrayList<String>) results.get(c);
                 HashSet set = new HashSet(distinct);
@@ -1261,6 +1410,8 @@ class QueryV4 {
 
 
             } else {
+                //ArrayList<String> adl=(ArrayList<String>) results.get(c);
+                System.out.println("Size:"+((ArrayList<String>) results.get(c)).size());
                 System.out.println("Key = " + c);
                 System.out.println("Values = " + results.get(c));
                 tosend.put(c, results.get(c));
@@ -1279,12 +1430,12 @@ class QueryV4 {
         for (int i = 0; i < fil.size(); i++) {
 
             int j = fil.get(i) + 1;
-            //System.out.println("starting from here:"+j);
+            //System.out.println("starting from here:" + j);
             here:
             while (j < paramv1.size()) {
                 if (!paramv1.get(j).equals(".")) {
                     expr = expr + paramv1.get(j) + " ";
-                    //System.out.println("you should see something"+expr);
+                    //System.out.println("you should see something" + expr);
                     //System.out.println(paramv1.get(j));
 
                     j++;
@@ -1303,7 +1454,7 @@ class QueryV4 {
             expression.put(ex[k], "true");
         }
         for (Map.Entry<String, String> me : expression.entrySet()) {
-            //System.out.println(me.getKey()+":"+me.getValue());
+            //System.out.println(me.getKey() + ":" + me.getValue());
         }
 
     }
@@ -1355,7 +1506,7 @@ class QueryV4 {
                     }
                 }
 
-                
+
 
             }
 
@@ -1368,38 +1519,33 @@ class QueryV4 {
         return finex;
 
     }
-    
-    public String checkForFilterOperands(String st, String st1)
-    {
-        
-        filterops=false;
-        String exp=new String();
-        
-        for(int i=0;i<fil.size();i++)
-        {
-             exp=exptabs.get(fil.get(i));
-             //System.out.println(exp);
-            if(filtertabs.get(exp).equals("true"))
-            {
+
+    public String checkForFilterOperands(String st, String st1) {
+
+        filterops = false;
+        String exp = new String();
+
+        for (int i = 0; i < fil.size(); i++) {
+            exp = exptabs.get(fil.get(i));
+            //System.out.println(exp);
+            if (filtertabs.get(exp).equals("true")) {
                 //System.out.println("it's covered");
                 continue;
-            }
-            else if(exp.contains(st)||exp.contains(st1))
-            {
+            } else if (exp.contains(st) || exp.contains(st1)) {
                 filtertabs.put(exp, "true");
                 //System.out.println("WE proceed further from here on!");
-                filterops=true;
+                filterops = true;
                 break;
-                
+
             }
         }
-        
-        
+
+
         return exp;
-        
+
     }
 
-    private int findTheLastOccurence(String sub, String obj) {
+    private int findTheLastOccurence(String sub) {
 //        int lastfound[] = new int[2];
 //        int x = -1;
 //        int y = -1;
@@ -1428,21 +1574,21 @@ class QueryV4 {
 //
 //        }
         int lastfound = 0;
-        
-        ArrayList<Integer> list1=(ArrayList<Integer>) lastfoundsub.get(sub);
-        ArrayList<Integer> list2=(ArrayList<Integer>) lastfoundpred.get(sub);
-        
-        if(list1.size()==1)
-        {
-            if(list2.size()==1)
-            {
-                lastfound=list2.get(list2.size()-1);
+
+        ArrayList<Integer> list1 = (ArrayList<Integer>) lastfoundsub.get(sub);
+        ArrayList<Integer> list2 = (ArrayList<Integer>) lastfoundpred.get(sub);
+
+        if (list1.size() == 1) {
+            //lastfound=list1.get(list1.size()-1);
+            if (list2.size() == 1) {
+                //lastfound=list2.get(list2.size()-1);
+                lastfound = list1.get(list1.size() - 1);
+            } else {
+                lastfound = list2.get(list2.size() - 2);
             }
-            else
-                lastfound=list2.get(list2.size()-2);
+        } else {
+            lastfound = list1.get(list1.size() - 2);
         }
-        else
-            lastfound=list1.get(list1.size()-2);
 //        
 //        if(lastfoundsub.containsKey(sub))
 //        {
@@ -1489,6 +1635,7 @@ class QueryV4 {
         }
         return lastfound;
     }
+   
 }
 
 public class AnimalQueryV4 {
@@ -1499,30 +1646,31 @@ public class AnimalQueryV4 {
 
 
 
- long lStartTime = System.nanoTime();
+        long lStartTime = System.nanoTime();
+        /*------------------------------------------BSBM Queries---------------------------------------------------------------------------------------------*/
+//        String queryString =" PREFIX bsbm-inst: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/>\n" +
+//"PREFIX bsbm: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/>\n" +
+//"PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+//"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>"+
+//                "SELECT *\n"
+//                + "WHERE { \n"
+//                + "    \n"
+//                +"?product rdfs:label ?label .\n"
+//                + "  ?product rdf:type bsbm-inst:ProductType10 .\n"
+//                + "?product bsbm:productFeature bsbm-inst:ProductFeature397 .\n"
+//                + "?product bsbm:productFeature bsbm-inst:ProductFeature380 .\n"
+//                + "    ?product bsbm:productPropertyNumeric1 ?value1 . \n"
+//                + "    \n"
+//                + "    FILTER ( ?value1 < 200 ) .\n"
+//                + "    ?product bsbm:productPropertyNumeric1 ?value2 .\n"
+//                + "\n"
+//                + "FILTER ( ?value2 > 100 ) .\n"
+//                + "    \n"
 
-        String queryString =" PREFIX bsbm-inst: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/>\n" +
-"PREFIX bsbm: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/>\n" +
-"PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
-"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>"+
-                "SELECT *\n"
-                + "WHERE { \n"
-                + "    \n"
-                +"?product rdfs:label ?label .\n"
-                + "  ?product rdf:type bsbm-inst:ProductType10 .\n"
-                + "?product bsbm:productFeature bsbm-inst:ProductFeature397 .\n"
-                + "?product bsbm:productFeature bsbm-inst:ProductFeature380 .\n"
-                + "    ?product bsbm:productPropertyNumeric1 ?value1 . \n"
-                + "    \n"
-                + "    FILTER ( ?value1 < 200 ) .\n"
-                + "    ?product bsbm:productPropertyNumeric1 ?value2 .\n"
-                + "\n"
-                + "FILTER ( ?value2 > 100 ) .\n"
-                + "    \n"
-                
-                + "    ?product rdf:type ?type .\n"
-                + "	}";
- 
+//                + "    ?product rdf:type ?type .\n"
+//                + "	}";
+
+
 // String queryString="PREFIX bsbm-inst: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/dataFromProducer5/>\n" +
 //"PREFIX bsbm: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/>\n" +
 //"PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
@@ -1544,8 +1692,7 @@ public class AnimalQueryV4 {
 //"	bsbm-inst:Product209 bsbm:productPropertyNumeric1 ?propertyNumeric1 .\n" +
 //"	bsbm-inst:Product209 bsbm:productPropertyNumeric2 ?propertyNumeric2 .\n" +
 //"}";
-        Query query = QueryFactory.create(queryString);
-//        String queryString="SELECT ?homepage\n" +
+        //        String queryString="SELECT ?homepage\n" +
 //"\n" +
 //"WHERE {\n" +
 //"    http://www.w3.org/People/Berners-Lee/card#i foaf:knows ?known .\n" +
@@ -1561,26 +1708,41 @@ public class AnimalQueryV4 {
 //            + "FILTER ( ?value2 < 900 ) .\n"
 //            + "?product rdfs:label ?label .\n"
 //            + "};";
+ /*---------------------------------------------------------------------------------------------------------------------------------------*/
+
+
+        Charset encoding=Charset.defaultCharset();
+        String path="F:\\Cassandra\\LUBM\\Queries\\Query7.txt";
+        
+        String queryString = null;
+        try {
+            queryString = readFile(path, encoding);
+        } catch (IOException ex) {
+            Logger.getLogger(AnimalQueryV4.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        System.out.println(queryString);
+        Query query = QueryFactory.create(queryString);
+
         QueryV4 m = new QueryV4(queryString);
 
         m.connecti();
         m.init();
         // m.setQuery();
-       
+
         m.map(query);
-         
 
- 
-         m.executeSubQueries(query);
-         m.printResults(query);
-         
-         long lEndTime = System.nanoTime();
-     
-         long difference = lEndTime - lStartTime;
-  
 
-       
-        
+
+        m.executeSubQueries(query);
+        m.printResults(query);
+
+        long lEndTime = System.nanoTime();
+
+        long difference = lEndTime - lStartTime;
+
+
+
+
         //System.out.println("Elapsed nanoseconds: " + difference);
         System.out.println("Elapsed Seconds: " + difference * 0.000000001);
 
@@ -1591,5 +1753,10 @@ public class AnimalQueryV4 {
 
         m.close();
 
+    }
+
+    private static String readFile(String path, Charset encoding) throws IOException {
+         byte[] encoded = Files.readAllBytes(Paths.get(path));
+     return encoding.decode(ByteBuffer.wrap(encoded)).toString();
     }
 }

@@ -30,12 +30,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import org.apache.cassandra.config.ColumnDefinition;
+
 
 /**
  *
  * @author SanjayV
  */
-class Jena extends setup {
+class Jena extends setupv1 {
 
     static public String ont = "http://www.semanticweb.org/sanjayv/ontologies/2013/11/untitled-ontology-11#";
     public static Session session;
@@ -45,6 +47,7 @@ class Jena extends setup {
     //public static HashMap<String, String> res = new HashMap<>();
     static int count;
     static int counts = 0;
+    File uni = new File("F:\\Cassandra\\LUBM\\src\\University0_0.owl");
 
     @Override
     public void connecti() {
@@ -70,11 +73,11 @@ class Jena extends setup {
 
     @Override
     public void close() {
-        cluster.shutdown();
+        cluster.close();
 
     }
 
-    public void insertStatements(Model m, Resource s, Property p, Resource o) {
+   /* public void insertStatements(Model m, Resource s, Property p, Resource o) {
         for (StmtIterator i = m.listStatements(s, p, o); i.hasNext();) {
             count++;
             String col = "col" + count;
@@ -147,7 +150,7 @@ class Jena extends setup {
                 }
             }
         }
-    }
+    } */
     public void populateWithJenaInference(File uni, String db) throws MalformedURLException
     {
          //File uni = new File("C:\\Users\\SanjayV\\SkyDrive\\Documents\\benchmark1M.rdf");
@@ -199,10 +202,11 @@ class Jena extends setup {
 //            }
 
         int c=0;
+        
        
         while (stmts1.hasNext()) {
-            c++;
-            System.out.println(c);
+            counts++;
+            System.out.println(counts);
             String sa = stmts1.next().toString();
             //System.out.println(map.get("type"));
 
@@ -212,17 +216,21 @@ class Jena extends setup {
             String first = sp[0].substring(1, sp[0].length());
             // System.out.println(first);
             first = first.replace("'", "");
-            first = " " + first;
+            //first = " " + first;
 
             // first=first.replace(ont,"tst:");
 
             String last = sp[2].substring(0, sp[2].length() - 1);
+            if(last.startsWith(" "))
+                last=last.replace(" ", "");
             //System.out.println(last);
             last = last.replace("'", "");
 
             //last=last.replace(ont,"tst:");
             String mid; 
             mid = sp[1];
+            if(mid.startsWith(" "))
+                    mid=mid.replace(" ", "");
             String msplit[]=new String[2];
             if (mid.contains("#")) {
                 msplit = mid.split("#");
@@ -247,6 +255,22 @@ class Jena extends setup {
                         if(msplit[y].equals("domain")||msplit[y].equals("range")||msplit[y].equals("subPropertyOf"))
                         {
                             continue;
+                        }
+                        if(map.get(msplit[y])==null)
+                        {
+                        
+                            map.put(msplit[y], "false");
+                            ResultSet rs=session.execute("SELECT * FROM "+db+";");
+                            ColumnDefinitions cf=rs.getColumnDefinitions();
+                            if(cf.contains(msplit[y]))
+                            {
+                            }
+                            else
+                            {
+                            System.out.println("Adding in TestInsert: Raised Null Pointer"+msplit[y]);
+                            session.execute("ALTER TABLE "+db+" ADD "+msplit[y]+" text;");
+                            }
+                            
                         }
                         if (map.get(msplit[y]).equals("false")) {
                             //s
@@ -282,9 +306,10 @@ class Jena extends setup {
         }
 
 
-       
     }
     }
+    
+
 
 
 
